@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>購票登記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --paper:#EEF1F6;
+    --card:#FFFFFF;
+    --ink:#1B2430;
+    --ink-soft:#5B6472;
+    --gold:#E8A23D;
+    --gold-deep:#C97F1F;
+    --stamp:#C1443C;
+    --line:#C9CDD3;
+    --line-soft:#DEE1E6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:20px 16px 60px;
+  }
+
+  /* ---- Ticket stub header (signature element) ---- */
+  .stub{
+    display:flex;
+    background:var(--ink);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 8px 24px rgba(27,36,48,0.18);
+    position:relative;
+  }
+  .stub-main{
+    flex:1;
+    padding:22px 20px;
+    min-width:0;
+  }
+  .stub-eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    color:var(--gold);
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .stub-title{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:22px;
+    color:#fff;
+    line-height:1.3;
+    word-break:break-word;
+  }
+  .stub-title-input{
+    background:transparent;
+    border:none;
+    border-bottom:1px dashed rgba(255,255,255,0.35);
+    color:#fff;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:22px;
+    width:100%;
+    padding:2px 0 4px;
+    outline:none;
+  }
+  .stub-title-input::placeholder{color:rgba(255,255,255,0.45);}
+  .stub-edit{
+    margin-top:10px;
+    background:none;
+    border:none;
+    color:rgba(255,255,255,0.55);
+    font-size:12px;
+    cursor:pointer;
+    padding:0;
+    font-family:'Inter',sans-serif;
+    text-decoration:underline;
+  }
+  .stub-divider{
+    width:0;
+    border-left:2px dashed rgba(255,255,255,0.25);
+    position:relative;
+  }
+  .stub-divider::before,.stub-divider::after{
+    content:'';
+    position:absolute;
+    left:-9px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--paper);
+  }
+  .stub-divider::before{top:-9px;}
+  .stub-divider::after{bottom:-9px;}
+  .stub-counter{
+    width:132px;
+    padding:22px 16px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    gap:10px;
+  }
+  .counter-block .num{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:26px;
+    color:var(--gold);
+    line-height:1;
+  }
+  .counter-block .lbl{
+    font-size:10px;
+    color:rgba(255,255,255,0.55);
+    letter-spacing:0.08em;
+    margin-top:4px;
+  }
+
+  /* ---- Form card ---- */
+  .card{
+    background:var(--card);
+    border-radius:14px;
+    padding:20px;
+    margin-top:16px;
+    box-shadow:0 1px 3px rgba(27,36,48,0.06);
+    border:1px solid var(--line-soft);
+  }
+  .card h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15px;
+    margin:0 0 14px;
+    color:var(--ink);
+  }
+  .field-row{
+    display:flex;
+    gap:10px;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .field label{
+    font-size:12px;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .field input{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:15px;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    outline:none;
+    width:100%;
+  }
+  .field input:focus{border-color:var(--gold-deep);}
+  .field.name{flex:1.4;}
+  .field.qty{flex:1;}
+  .field.price{flex:1.3;}
+  .price-check{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    color:var(--ink-soft);
+    font-weight:500;
+    cursor:pointer;
+  }
+  .price-check input{width:auto;}
+  .field input:disabled{background:#F2F3F5;color:var(--ink-soft);cursor:not-allowed;}
+  .card-header-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  .card-header-row h2{margin:0;}
+  .export-btn{
+    background:none;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:7px 12px;
+    font-size:12.5px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .export-btn:hover{border-color:var(--gold-deep);color:var(--gold-deep);}
+  .no-price-tag{
+    color:var(--ink-soft);
+    font-style:italic;
+    font-family:'Inter',sans-serif;
+  }
+  .volunteer-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;
+  }
+  .volunteer-chip{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:#FBF0DC;
+    border:1px solid #EFD9AC;
+    color:var(--gold-deep);
+    border-radius:999px;
+    padding:6px 10px 6px 14px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .volunteer-chip button{
+    background:none;
+    border:none;
+    color:var(--gold-deep);
+    cursor:pointer;
+    font-size:13px;
+    padding:0 2px;
+    line-height:1;
+    opacity:0.6;
+  }
+  .volunteer-chip button:hover{opacity:1;}
+  .volunteer-empty{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+  .submit-btn{
+    margin-top:14px;
+    width:100%;
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:12px;
+    font-size:15px;
+    font-weight:600;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+    transition:background 0.15s ease;
+  }
+  .submit-btn:hover{background:#2B3646;}
+  .submit-btn:disabled{opacity:0.5;cursor:default;}
+  .hint{font-size:12px;color:var(--ink-soft);margin-top:8px;}
+
+  /* ---- Table ---- */
+  .list-card{margin-top:16px;}
+  table{width:100%;border-collapse:collapse;}
+  thead th{
+    text-align:left;
+    font-size:11px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    padding:0 8px 10px;
+    border-bottom:1px solid var(--line-soft);
+    font-weight:600;
+  }
+  thead th.num-col{text-align:right;}
+  tbody td{
+    padding:12px 8px;
+    border-bottom:1px solid var(--line-soft);
+    font-size:14.5px;
+  }
+  tbody td.num-col{text-align:right;font-family:'IBM Plex Mono',monospace;}
+  tbody tr:last-child td{border-bottom:none;}
+  .name-cell{font-weight:600;}
+  .del-btn{
+    background:none;border:none;color:var(--ink-soft);
+    cursor:pointer;font-size:13px;padding:4px 6px;border-radius:6px;
+  }
+  .del-btn:hover{color:var(--stamp);background:#FBEAE8;}
+  .edit-btn{
+    background:none;border:none;color:var(--gold-deep);
+    cursor:pointer;font-size:13px;padding:4px 6px;border-radius:6px;
+  }
+  .edit-btn:hover{background:#FBF0DC;}
+  .rank-cell{width:1%;white-space:nowrap;}
+  .rank-controls{
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .rank-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:13px;
+    color:var(--ink-soft);
+    min-width:16px;
+    text-align:center;
+  }
+  .move-btn{
+    background:none;
+    border:1px solid var(--line-soft);
+    border-radius:5px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-size:10px;
+    line-height:1;
+    padding:4px 5px;
+  }
+  .move-btn:hover:not(:disabled){border-color:var(--gold-deep);color:var(--gold-deep);}
+  .move-btn:disabled{opacity:0.25;cursor:default;}
+  .empty-state{
+    text-align:center;
+    padding:36px 16px;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+  .totals{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#F7F1E4;
+    border-radius:10px;
+    padding:14px 16px;
+    margin-top:14px;
+  }
+  .totals .t-item{text-align:center;flex:1;}
+  .totals .t-item .v{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:18px;
+    color:var(--gold-deep);
+  }
+  .totals .t-item .l{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .status{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+  .status.err{color:var(--stamp);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="stub">
+    <div class="stub-main">
+      <div class="stub-eyebrow">團體購票登記</div>
+      <div id="titleDisplay" class="stub-title">點兩下編輯場次名稱</div>
+      <input id="titleInput" class="stub-title-input" style="display:none" placeholder="輸入場次 / 活動名稱" />
+      <button class="stub-edit" id="editTitleBtn">編輯場次名稱</button>
+    </div>
+    <div class="stub-divider"></div>
+    <div class="stub-counter">
+      <div class="counter-block">
+        <div class="num" id="totalQtyNum">0</div>
+        <div class="lbl">總張數</div>
+      </div>
+      <div class="counter-block">
+        <div class="num" id="totalPeopleNum">0</div>
+        <div class="lbl">登記人數</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>填寫我的登記</h2>
+    <div class="field-row">
+      <div class="field name">
+        <label>姓名</label>
+        <input id="inpName" type="text" placeholder="你的名字" />
+      </div>
+      <div class="field qty">
+        <label>張數</label>
+        <input id="inpQty" type="number" min="1" placeholder="2" />
+      </div>
+      <div class="field price">
+        <label>單張願付金額</label>
+        <input id="inpPrice" type="number" min="0" placeholder="1500" />
+        <label class="price-check">
+          <input type="checkbox" id="inpNoPrice" />
+          不限金額，有票就好
+        </label>
+      </div>
+    </div>
+    <button class="submit-btn" id="submitBtn">送出 / 更新我的登記</button>
+    <div class="hint">同名會覆蓋成最新的登記內容，之後想改張數或金額直接重填送出即可。</div>
+    <div class="status" id="statusMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🙋 自願幫忙搶票</h2>
+    <div class="field-row">
+      <div class="field name" style="flex:1;">
+        <label>姓名</label>
+        <input id="inpVolunteer" type="text" placeholder="有空幫忙搶票就填這裡" />
+      </div>
+    </div>
+    <button class="submit-btn" id="volunteerBtn" style="background:var(--gold-deep);">我也要幫忙搶票</button>
+    <div id="volunteerList" class="volunteer-list"></div>
+  </div>
+
+  <div class="card list-card">
+    <div class="card-header-row">
+      <h2>大家的登記</h2>
+      <button class="export-btn" id="exportBtn">匯出 Excel</button>
+    </div>
+    <div id="tableWrap"></div>
+    <div class="totals">
+      <div class="t-item">
+        <div class="v" id="sumQty">0</div>
+        <div class="l">總張數</div>
+      </div>
+      <div class="t-item">
+        <div class="v" id="sumAmount">$0</div>
+        <div class="l">總金額</div>
+      </div>
+      <div class="t-item">
+        <div class="v" id="sumPeople">0</div>
+        <div class="l">人數</div>
+      </div>
+    </div>
+    <div class="hint" id="unpricedNote" style="text-align:center;margin-top:6px;"></div>
+  </div>
+
+</div>
+
+<script>
+// ⚠️ 部署 Apps Script 後，把下面換成你的「網頁應用程式網址」
+// 範例：https://script.google.com/macros/s/AKfycb.../exec
+const API_URL = 'https://script.google.com/macros/s/AKfycbyljXc7_XkYqXE4zMDdjPtaCjFs3W5749Ec4nYIbJhF6uXV0MSucoyfy9NSFkvO_IkX/exec';
+
+const ORDERS_KEY = 'orders';
+const TITLE_KEY = 'event-title';
+const VOLUNTEERS_KEY = 'volunteers';
+
+const el = (id) => document.getElementById(id);
+const tableWrap = el('tableWrap');
+const statusMsg = el('statusMsg');
+
+function setStatus(msg, isErr){
+  statusMsg.textContent = msg || '';
+  statusMsg.className = 'status' + (isErr ? ' err' : '');
+}
+
+function fmtMoney(n){
+  return '$' + Number(n).toLocaleString();
+}
+
+async function loadOrders(){
+  try{
+    const res = await fetch(`${API_URL}?action=getOrders`);
+    return await res.json();
+  }catch(e){
+    return [];
+  }
+}
+
+async function saveOrders(list){
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'saveOrders', data: list })
+    });
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+async function loadTitle(){
+  try{
+    const res = await fetch(`${API_URL}?action=getTitle`);
+    const data = await res.json();
+    return data.title || '';
+  }catch(e){
+    return '';
+  }
+}
+
+async function saveTitle(t){
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'saveTitle', data: t })
+    });
+  }catch(e){}
+}
+
+async function loadVolunteers(){
+  try{
+    const res = await fetch(`${API_URL}?action=getVolunteers`);
+    return await res.json();
+  }catch(e){
+    return [];
+  }
+}
+
+async function saveVolunteers(list){
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'saveVolunteers', data: list })
+    });
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function renderVolunteers(list){
+  const wrap = el('volunteerList');
+  if(!list.length){
+    wrap.innerHTML = '<div class="volunteer-empty">目前還沒有人自願幫忙搶票</div>';
+    return;
+  }
+  const sorted = [...list].sort((a,b) => a.ts - b.ts);
+  wrap.innerHTML = sorted.map(v => `
+    <div class="volunteer-chip">
+      ${escapeHtml(v.name)}
+      <button data-name="${escapeHtml(v.name)}" title="移除">✕</button>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const name = btn.getAttribute('data-name');
+      const current = await loadVolunteers();
+      const updated = current.filter(v => v.name !== name);
+      await saveVolunteers(updated);
+      renderVolunteers(updated);
+    });
+  });
+}
+
+function renderTable(list){
+  if(!list.length){
+    tableWrap.innerHTML = '<div class="empty-state">還沒有人登記，第一個填寫上面的表單吧</div>';
+    return;
+  }
+  let rows = list.map((o, idx) => {
+    const hasPrice = o.price !== null && o.price !== undefined;
+    const priceCell = hasPrice ? fmtMoney(o.price) : '<span class="no-price-tag">不限金額</span>';
+    const subtotalCell = hasPrice ? fmtMoney(o.qty * o.price) : '<span class="no-price-tag">—</span>';
+    const isFirst = idx === 0;
+    const isLast = idx === list.length - 1;
+    return `<tr>
+      <td class="rank-cell">
+        <div class="rank-controls">
+          <button class="move-btn" data-idx="${idx}" data-dir="up" ${isFirst ? 'disabled' : ''}>▲</button>
+          <span class="rank-num">${idx + 1}</span>
+          <button class="move-btn" data-idx="${idx}" data-dir="down" ${isLast ? 'disabled' : ''}>▼</button>
+        </div>
+      </td>
+      <td class="name-cell">${escapeHtml(o.name)}</td>
+      <td class="num-col">${o.qty}</td>
+      <td class="num-col">${priceCell}</td>
+      <td class="num-col">${subtotalCell}</td>
+      <td style="text-align:right;white-space:nowrap;">
+        <button class="edit-btn" data-name="${escapeHtml(o.name)}">編輯</button>
+        <button class="del-btn" data-name="${escapeHtml(o.name)}">刪除</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tableWrap.innerHTML = `<table>
+    <thead>
+      <tr>
+        <th>順序</th>
+        <th>姓名</th>
+        <th class="num-col">張數</th>
+        <th class="num-col">單張金額</th>
+        <th class="num-col">小計</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+
+  tableWrap.querySelectorAll('.move-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = parseInt(btn.getAttribute('data-idx'), 10);
+      const dir = btn.getAttribute('data-dir');
+      const current = await loadOrders();
+      const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
+      if(targetIdx < 0 || targetIdx >= current.length) return;
+      const updated = [...current];
+      [updated[idx], updated[targetIdx]] = [updated[targetIdx], updated[idx]];
+      await saveOrders(updated);
+      await refresh();
+    });
+  });
+
+  tableWrap.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const name = btn.getAttribute('data-name');
+      const current = await loadOrders();
+      const entry = current.find(o => o.name === name);
+      if(!entry) return;
+
+      el('inpName').value = entry.name;
+      el('inpQty').value = entry.qty;
+      const hasPrice = entry.price !== null && entry.price !== undefined;
+      noPriceCheck.checked = !hasPrice;
+      priceInput.disabled = !hasPrice;
+      priceInput.value = hasPrice ? entry.price : '';
+
+      setStatus(`正在編輯「${name}」的登記，改完按下方送出即可更新`, false);
+      el('inpName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el('inpQty').focus();
+    });
+  });
+
+  tableWrap.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if(btn.dataset.confirm === '1'){
+        const name = btn.getAttribute('data-name');
+        const current = await loadOrders();
+        const updated = current.filter(o => o.name !== name);
+        await saveOrders(updated);
+        await refresh();
+        return;
+      }
+      btn.dataset.confirm = '1';
+      btn.textContent = '確定刪除?';
+      btn.style.color = 'var(--stamp)';
+      btn.style.fontWeight = '700';
+      setTimeout(() => {
+        if(btn.isConnected && btn.dataset.confirm === '1'){
+          btn.dataset.confirm = '0';
+          btn.textContent = '刪除';
+          btn.style.color = '';
+          btn.style.fontWeight = '';
+        }
+      }, 2500);
+    });
+  });
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function updateTotals(list){
+  const totalQty = list.reduce((s,o) => s + o.qty, 0);
+  const pricedEntries = list.filter(o => o.price !== null && o.price !== undefined);
+  const totalAmount = pricedEntries.reduce((s,o) => s + o.qty * o.price, 0);
+  const unpricedCount = list.length - pricedEntries.length;
+  const totalPeople = list.length;
+
+  el('totalQtyNum').textContent = totalQty;
+  el('totalPeopleNum').textContent = totalPeople;
+  el('sumQty').textContent = totalQty;
+  el('sumAmount').textContent = fmtMoney(totalAmount);
+  el('sumPeople').textContent = totalPeople;
+
+  const noteEl = el('unpricedNote');
+  noteEl.textContent = unpricedCount ? `金額總計不含 ${unpricedCount} 位「不限金額」的登記` : '';
+}
+
+async function refresh(){
+  const list = await loadOrders();
+  renderTable(list);
+  updateTotals(list);
+}
+
+const noPriceCheck = el('inpNoPrice');
+const priceInput = el('inpPrice');
+
+noPriceCheck.addEventListener('change', () => {
+  priceInput.disabled = noPriceCheck.checked;
+  if(noPriceCheck.checked){ priceInput.value = ''; }
+});
+
+el('submitBtn').addEventListener('click', async () => {
+  const name = el('inpName').value.trim();
+  const qty = parseInt(el('inpQty').value, 10);
+  const noPrice = noPriceCheck.checked;
+  const priceRaw = priceInput.value;
+  const price = noPrice ? null : parseFloat(priceRaw);
+
+  if(!name){ setStatus('請填寫姓名', true); return; }
+  if(!qty || qty <= 0){ setStatus('請填寫有效的張數', true); return; }
+  if(!noPrice && (isNaN(price) || price < 0)){ setStatus('請填寫願付金額，或勾選「不限金額」', true); return; }
+
+  el('submitBtn').disabled = true;
+  setStatus('送出中…');
+
+  const current = await loadOrders();
+  const newEntry = { name, qty, price: noPrice ? null : price, ts: Date.now() };
+  const existingIdx = current.findIndex(o => o.name === name);
+  let updated;
+  if(existingIdx > -1){
+    updated = [...current];
+    updated[existingIdx] = newEntry;
+  }else{
+    updated = [...current, newEntry];
+  }
+
+  const ok = await saveOrders(updated);
+  el('submitBtn').disabled = false;
+
+  if(ok){
+    setStatus('已送出，感謝登記！');
+    await refresh();
+  }else{
+    setStatus('送出失敗，請再試一次', true);
+  }
+});
+
+el('volunteerBtn').addEventListener('click', async () => {
+  const nameInput = el('inpVolunteer');
+  const name = nameInput.value.trim();
+  if(!name) return;
+
+  const current = await loadVolunteers();
+  if(current.some(v => v.name === name)){
+    nameInput.value = '';
+    return;
+  }
+  const updated = [...current, { name, ts: Date.now() }];
+  const ok = await saveVolunteers(updated);
+  if(ok){
+    nameInput.value = '';
+    renderVolunteers(updated);
+  }
+});
+
+el('inpVolunteer').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ el('volunteerBtn').click(); }
+});
+
+// Title editing
+const titleDisplay = el('titleDisplay');
+const titleInput = el('titleInput');
+const editTitleBtn = el('editTitleBtn');
+
+function enterTitleEdit(){
+  titleInput.value = titleDisplay.dataset.raw === 'placeholder' ? '' : titleDisplay.textContent;
+  titleDisplay.style.display = 'none';
+  titleInput.style.display = 'block';
+  titleInput.focus();
+}
+
+titleDisplay.addEventListener('dblclick', enterTitleEdit);
+editTitleBtn.addEventListener('click', enterTitleEdit);
+
+async function commitTitle(){
+  const val = titleInput.value.trim();
+  titleInput.style.display = 'none';
+  titleDisplay.style.display = 'block';
+  if(val){
+    titleDisplay.textContent = val;
+    titleDisplay.dataset.raw = 'text';
+    await saveTitle(val);
+  }
+}
+
+titleInput.addEventListener('blur', commitTitle);
+titleInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ titleInput.blur(); }
+});
+
+el('exportBtn').addEventListener('click', async () => {
+  const list = await loadOrders();
+  if(!list.length){
+    setStatus('目前還沒有資料可以匯出', true);
+    return;
+  }
+  const rows = list.map((o, idx) => {
+    const hasPrice = o.price !== null && o.price !== undefined;
+    return {
+      '順序': idx + 1,
+      '姓名': o.name,
+      '張數': o.qty,
+      '單張願付金額': hasPrice ? o.price : '不限金額',
+      '小計': hasPrice ? o.qty * o.price : '不限金額',
+      '登記時間': new Date(o.ts).toLocaleString('zh-TW')
+    };
+  });
+  const totalQty = list.reduce((s,o) => s + o.qty, 0);
+  const pricedEntries = list.filter(o => o.price !== null && o.price !== undefined);
+  const totalAmount = pricedEntries.reduce((s,o) => s + o.qty * o.price, 0);
+  rows.push({});
+  rows.push({ '姓名': '總計', '張數': totalQty, '單張願付金額': '', '小計': totalAmount, '登記時間': '' });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:14},{wch:8},{wch:14},{wch:12},{wch:20}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '購票登記');
+
+  const volunteers = await loadVolunteers();
+  if(volunteers.length){
+    const vRows = [...volunteers].sort((a,b) => a.ts - b.ts).map(v => ({ '姓名': v.name }));
+    const wsV = XLSX.utils.json_to_sheet(vRows);
+    wsV['!cols'] = [{wch:14}];
+    XLSX.utils.book_append_sheet(wb, wsV, '幫搶志工');
+  }
+
+  const eventTitle = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '購票登記';
+  const filename = `${eventTitle}_購票登記_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, filename);
+});
+
+async function init(){
+  if(API_URL.includes('PASTE_YOUR')){
+    setStatus('⚠️ 尚未設定 API_URL，請先部署 Apps Script 並貼上網址（見程式碼開頭註解）', true);
+    return;
+  }
+  const title = await loadTitle();
+  if(title){
+    titleDisplay.textContent = title;
+    titleDisplay.dataset.raw = 'text';
+  }else{
+    titleDisplay.dataset.raw = 'placeholder';
+  }
+  await refresh();
+  const volunteers = await loadVolunteers();
+  renderVolunteers(volunteers);
+}
+
+init();
+</script>
+</body>
+</html>
