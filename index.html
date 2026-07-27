@@ -378,6 +378,29 @@
     </div>
   </div>
 
+  <div class="card event-panel">
+    <div class="card-header-row" style="margin-bottom:10px;">
+      <h2 style="font-size:13px;">📅 場次管理</h2>
+      <button class="export-btn" id="toggleEventPanelBtn">切換 / 新增場次</button>
+    </div>
+    <div id="eventPanelBody" style="display:none;">
+      <div class="field" style="margin-bottom:12px;">
+        <label>切換到現有場次</label>
+        <select id="eventSwitcher">
+          <option value="">請選擇場次…</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field" style="flex:1;">
+          <label>建立新場次(輸入名稱)</label>
+          <input id="inpNewEvent" type="text" placeholder="例如 0801演唱會" />
+        </div>
+      </div>
+      <button class="submit-btn" id="createEventBtn" style="margin-top:10px;">建立並前往新場次</button>
+      <div class="hint">建立後會自動產生新連結並切換過去，之後把新連結分享出去即可，舊場次資料不會受影響。</div>
+    </div>
+  </div>
+
   <div class="card">
     <h2>填寫我的登記</h2>
     <div class="field-row">
@@ -820,12 +843,80 @@ el('exportBtn').addEventListener('click', async () => {
   XLSX.writeFile(wb, filename);
 });
 
+async function listEvents(){
+  try{
+    const res = await fetch(`${API_URL}?action=listEvents`);
+    return await res.json();
+  }catch(e){
+    return [];
+  }
+}
+
+async function registerCurrentEvent(){
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'registerEvent', event: EVENT_ID })
+    });
+  }catch(e){}
+}
+
+function buildEventUrl(eventId){
+  const url = new URL(window.location.href);
+  url.searchParams.set('event', eventId);
+  return url.toString();
+}
+
+el('toggleEventPanelBtn').addEventListener('click', async () => {
+  const body = el('eventPanelBody');
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? 'block' : 'none';
+  if(isHidden){
+    const events = await listEvents();
+    const switcher = el('eventSwitcher');
+    switcher.innerHTML = '<option value="">請選擇場次…</option>' + events.map(ev => {
+      const label = ev.title ? `${ev.title}（${ev.event}）` : ev.event;
+      const selected = ev.event === EVENT_ID ? 'selected' : '';
+      return `<option value="${escapeHtml(ev.event)}" ${selected}>${escapeHtml(label)}</option>`;
+    }).join('');
+  }
+});
+
+el('eventSwitcher').addEventListener('change', (e) => {
+  const chosen = e.target.value;
+  if(chosen && chosen !== EVENT_ID){
+    window.location.href = buildEventUrl(chosen);
+  }
+});
+
+el('createEventBtn').addEventListener('click', async () => {
+  const name = el('inpNewEvent').value.trim();
+  if(!name){
+    setStatus('請先填寫新場次的名稱', true);
+    return;
+  }
+  const slug = name.replace(/\s+/g, '-');
+  el('createEventBtn').disabled = true;
+  setStatus('建立場次中…');
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'saveTitle', event: slug, data: name })
+    });
+    window.location.href = buildEventUrl(slug);
+  }catch(e){
+    setStatus('建立失敗，請再試一次', true);
+    el('createEventBtn').disabled = false;
+  }
+});
+
 async function init(){
   if(API_URL.includes('PASTE_YOUR')){
     setStatus('⚠️ 尚未設定 API_URL，請先部署 Apps Script 並貼上網址（見程式碼開頭註解）', true);
     return;
   }
   el('eventTag').textContent = `場次代碼:${EVENT_ID}`;
+  await registerCurrentEvent();
   const title = await loadTitle();
   if(title){
     titleDisplay.textContent = title;
