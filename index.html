@@ -495,11 +495,35 @@ async function loadOrders(){
   }
 }
 
-async function saveOrders(list){
+async function upsertOrderAPI(entry){
   try{
     await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'saveOrders', event: EVENT_ID, data: list })
+      body: JSON.stringify({ action: 'upsertOrder', event: EVENT_ID, data: entry })
+    });
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+async function deleteOrderAPI(name){
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'deleteOrder', event: EVENT_ID, name })
+    });
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+async function moveOrderAPI(name, direction){
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'moveOrder', event: EVENT_ID, name, direction })
     });
     return true;
   }catch(e){
@@ -535,11 +559,23 @@ async function loadVolunteers(){
   }
 }
 
-async function saveVolunteers(list){
+async function addVolunteerAPI(entry){
   try{
     await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'saveVolunteers', event: EVENT_ID, data: list })
+      body: JSON.stringify({ action: 'addVolunteer', event: EVENT_ID, data: entry })
+    });
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+async function removeVolunteerAPI(name){
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'removeVolunteer', event: EVENT_ID, name })
     });
     return true;
   }catch(e){
@@ -563,10 +599,12 @@ function renderVolunteers(list){
 
   wrap.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', async () => {
+      if(btn.disabled) return;
       const name = btn.getAttribute('data-name');
-      const current = await loadVolunteers();
-      const updated = current.filter(v => v.name !== name);
-      await saveVolunteers(updated);
+      btn.disabled = true;
+      btn.textContent = '…';
+      await removeVolunteerAPI(name);
+      const updated = await loadVolunteers();
       renderVolunteers(updated);
     });
   });
@@ -618,23 +656,20 @@ function renderTable(list){
 
   tableWrap.querySelectorAll('.move-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
+      if(btn.disabled) return;
+      tableWrap.querySelectorAll('.move-btn, .del-btn, .edit-btn').forEach(b => b.disabled = true);
       const idx = parseInt(btn.getAttribute('data-idx'), 10);
       const dir = btn.getAttribute('data-dir');
-      const current = await loadOrders();
-      const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
-      if(targetIdx < 0 || targetIdx >= current.length) return;
-      const updated = [...current];
-      [updated[idx], updated[targetIdx]] = [updated[targetIdx], updated[idx]];
-      await saveOrders(updated);
+      const name = list[idx].name;
+      await moveOrderAPI(name, dir);
       await refresh();
     });
   });
 
   tableWrap.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       const name = btn.getAttribute('data-name');
-      const current = await loadOrders();
-      const entry = current.find(o => o.name === name);
+      const entry = list.find(o => o.name === name);
       if(!entry) return;
 
       el('inpName').value = entry.name;
@@ -652,11 +687,13 @@ function renderTable(list){
 
   tableWrap.querySelectorAll('.del-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
+      if(btn.disabled) return;
       if(btn.dataset.confirm === '1'){
         const name = btn.getAttribute('data-name');
-        const current = await loadOrders();
-        const updated = current.filter(o => o.name !== name);
-        await saveOrders(updated);
+        btn.disabled = true;
+        btn.textContent = '刪除中…';
+        tableWrap.querySelectorAll('.move-btn, .edit-btn').forEach(b => b.disabled = true);
+        await deleteOrderAPI(name);
         await refresh();
         return;
       }
@@ -727,18 +764,8 @@ el('submitBtn').addEventListener('click', async () => {
   el('submitBtn').disabled = true;
   setStatus('送出中…');
 
-  const current = await loadOrders();
   const newEntry = { name, qty, price: noPrice ? null : price, ts: Date.now() };
-  const existingIdx = current.findIndex(o => o.name === name);
-  let updated;
-  if(existingIdx > -1){
-    updated = [...current];
-    updated[existingIdx] = newEntry;
-  }else{
-    updated = [...current, newEntry];
-  }
-
-  const ok = await saveOrders(updated);
+  const ok = await upsertOrderAPI(newEntry);
   el('submitBtn').disabled = false;
 
   if(ok){
@@ -754,17 +781,12 @@ el('volunteerBtn').addEventListener('click', async () => {
   const name = nameInput.value.trim();
   if(!name) return;
 
-  const current = await loadVolunteers();
-  if(current.some(v => v.name === name)){
-    nameInput.value = '';
-    return;
-  }
-  const updated = [...current, { name, ts: Date.now() }];
-  const ok = await saveVolunteers(updated);
-  if(ok){
-    nameInput.value = '';
-    renderVolunteers(updated);
-  }
+  el('volunteerBtn').disabled = true;
+  await addVolunteerAPI({ name, ts: Date.now() });
+  nameInput.value = '';
+  el('volunteerBtn').disabled = false;
+  const updated = await loadVolunteers();
+  renderVolunteers(updated);
 });
 
 el('inpVolunteer').addEventListener('keydown', (e) => {
