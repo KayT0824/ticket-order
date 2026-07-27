@@ -87,6 +87,13 @@
     font-family:'Inter',sans-serif;
     text-decoration:underline;
   }
+  .event-tag{
+    margin-top:8px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:rgba(232,162,61,0.75);
+    letter-spacing:0.03em;
+  }
   .stub-divider{
     width:0;
     border-left:2px dashed rgba(255,255,255,0.25);
@@ -356,6 +363,7 @@
       <div id="titleDisplay" class="stub-title">點兩下編輯場次名稱</div>
       <input id="titleInput" class="stub-title-input" style="display:none" placeholder="輸入場次 / 活動名稱" />
       <button class="stub-edit" id="editTitleBtn">編輯場次名稱</button>
+      <div class="event-tag" id="eventTag"></div>
     </div>
     <div class="stub-divider"></div>
     <div class="stub-counter">
@@ -440,6 +448,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyljXc7_XkYqXE4zMDdjPta
 const ORDERS_KEY = 'orders';
 const TITLE_KEY = 'event-title';
 const VOLUNTEERS_KEY = 'volunteers';
+const EVENT_ID = new URLSearchParams(window.location.search).get('event') || 'default';
 
 const el = (id) => document.getElementById(id);
 const tableWrap = el('tableWrap');
@@ -456,7 +465,7 @@ function fmtMoney(n){
 
 async function loadOrders(){
   try{
-    const res = await fetch(`${API_URL}?action=getOrders`);
+    const res = await fetch(`${API_URL}?action=getOrders&event=${encodeURIComponent(EVENT_ID)}`);
     return await res.json();
   }catch(e){
     return [];
@@ -467,7 +476,7 @@ async function saveOrders(list){
   try{
     await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'saveOrders', data: list })
+      body: JSON.stringify({ action: 'saveOrders', event: EVENT_ID, data: list })
     });
     return true;
   }catch(e){
@@ -477,7 +486,7 @@ async function saveOrders(list){
 
 async function loadTitle(){
   try{
-    const res = await fetch(`${API_URL}?action=getTitle`);
+    const res = await fetch(`${API_URL}?action=getTitle&event=${encodeURIComponent(EVENT_ID)}`);
     const data = await res.json();
     return data.title || '';
   }catch(e){
@@ -489,14 +498,14 @@ async function saveTitle(t){
   try{
     await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'saveTitle', data: t })
+      body: JSON.stringify({ action: 'saveTitle', event: EVENT_ID, data: t })
     });
   }catch(e){}
 }
 
 async function loadVolunteers(){
   try{
-    const res = await fetch(`${API_URL}?action=getVolunteers`);
+    const res = await fetch(`${API_URL}?action=getVolunteers&event=${encodeURIComponent(EVENT_ID)}`);
     return await res.json();
   }catch(e){
     return [];
@@ -507,7 +516,7 @@ async function saveVolunteers(list){
   try{
     await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'saveVolunteers', data: list })
+      body: JSON.stringify({ action: 'saveVolunteers', event: EVENT_ID, data: list })
     });
     return true;
   }catch(e){
@@ -816,6 +825,7 @@ async function init(){
     setStatus('⚠️ 尚未設定 API_URL，請先部署 Apps Script 並貼上網址（見程式碼開頭註解）', true);
     return;
   }
+  el('eventTag').textContent = `場次代碼:${EVENT_ID}`;
   const title = await loadTitle();
   if(title){
     titleDisplay.textContent = title;
