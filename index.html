@@ -129,6 +129,22 @@
     color:rgba(232,162,61,0.75);
     letter-spacing:0.03em;
   }
+  .deadline-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:6px;
+    flex-wrap:wrap;
+  }
+  .deadline-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:rgba(255,255,255,0.65);
+  }
+  .deadline-tag.passed{
+    color:#F0938A;
+    font-weight:600;
+  }
   .stub-divider{
     width:0;
     border-left:2px dashed rgba(255,255,255,0.25);
@@ -403,6 +419,10 @@
       <div id="titleDisplay" class="stub-title">點兩下編輯場次名稱</div>
       <input id="titleInput" class="stub-title-input" style="display:none" placeholder="輸入場次 / 活動名稱" />
       <button class="stub-edit" id="editTitleBtn">編輯場次名稱</button>
+      <div class="deadline-row">
+        <div class="deadline-tag" id="deadlineTag">尚未設定截止時間</div>
+        <button class="stub-edit" id="editDeadlineBtn">設定截止時間🔒</button>
+      </div>
       <div class="event-tag" id="eventTag"></div>
     </div>
     <div class="stub-divider"></div>
@@ -508,6 +528,9 @@
 // 範例：https://script.google.com/macros/s/AKfycb.../exec
 const API_URL = 'https://script.google.com/macros/s/AKfycbyljXc7_XkYqXE4zMDdjPtaCjFs3W5749Ec4nYIbJhF6uXV0MSucoyfy9NSFkvO_IkX/exec';
 
+// ⚠️ 主辦人專用密碼，只用來保護「設定截止時間」，改成你自己想用的密碼即可
+const ORGANIZER_PIN = '0824';
+
 const ORDERS_KEY = 'orders';
 const TITLE_KEY = 'event-title';
 const VOLUNTEERS_KEY = 'volunteers';
@@ -517,19 +540,41 @@ const el = (id) => document.getElementById(id);
 let ordersCache = [];
 let volunteersCache = [];
 let isEventConfigured = false;
+let currentDeadline = '';
+
+function isDeadlinePassed(){
+  if(!currentDeadline) return false;
+  return Date.now() > new Date(currentDeadline).getTime();
+}
 
 function applyLockState(){
   const banner = el('warnBanner');
+  const bannerText = banner.querySelector('.warn-text');
+  const warnBtn = el('warnSwitchBtn');
   const registerCard = el('registerCard');
   const volunteerCard = el('volunteerCard');
-  if(isEventConfigured){
+
+  const deadlinePassed = isDeadlinePassed();
+  const locked = !isEventConfigured || deadlinePassed;
+
+  if(!locked){
     banner.style.display = 'none';
     registerCard.classList.remove('form-locked');
     volunteerCard.classList.remove('form-locked');
-  }else{
-    banner.style.display = 'flex';
-    registerCard.classList.add('form-locked');
-    volunteerCard.classList.add('form-locked');
+    return;
+  }
+
+  banner.style.display = 'flex';
+  registerCard.classList.add('form-locked');
+  volunteerCard.classList.add('form-locked');
+
+  if(!isEventConfigured){
+    bannerText.textContent = '⚠️ 這個連結還沒有設定正式場次，請先確認你拿到的是不是正確的活動連結';
+    warnBtn.style.display = 'inline-block';
+  }else if(deadlinePassed){
+    const d = new Date(currentDeadline);
+    bannerText.textContent = `⏰ 這場登記已於 ${d.toLocaleString('zh-TW')} 截止，無法再填寫或修改`;
+    warnBtn.style.display = 'none';
   }
 }
 const tableWrap = el('tableWrap');
@@ -606,6 +651,28 @@ async function saveTitle(t){
       body: JSON.stringify({ action: 'saveTitle', event: EVENT_ID, data: t })
     });
   }catch(e){}
+}
+
+async function loadDeadline(){
+  try{
+    const res = await fetch(`${API_URL}?action=getDeadline&event=${encodeURIComponent(EVENT_ID)}`);
+    const data = await res.json();
+    return data.deadline || '';
+  }catch(e){
+    return '';
+  }
+}
+
+async function saveDeadline(iso){
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'saveDeadline', event: EVENT_ID, data: iso })
+    });
+    return true;
+  }catch(e){
+    return false;
+  }
 }
 
 async function loadVolunteers(){
@@ -1073,9 +1140,10 @@ async function init(){
   }
   el('eventTag').textContent = `場次代碼:${EVENT_ID}`;
 
-  const [, title, orders, volunteers] = await Promise.all([
+  const [, title, deadline, orders, volunteers] = await Promise.all([
     registerCurrentEvent(),
     loadTitle(),
+    loadDeadline(),
     loadOrders(),
     loadVolunteers()
   ]);
@@ -1088,14 +1156,71 @@ async function init(){
     titleDisplay.dataset.raw = 'placeholder';
     isEventConfigured = false;
   }
+
+  currentDeadline = deadline;
+  renderDeadlineTag();
   applyLockState();
 
   setOrders(orders);
   volunteersCache = volunteers;
   renderVolunteers(volunteers);
+
+  setInterval(() => {
+    renderDeadlineTag();
+    applyLockState();
+  }, 30000);
 }
+
+function renderDeadlineTag(){
+  const tag = el('deadlineTag');
+  if(!currentDeadline){
+    tag.textContent = '尚未設定截止時間';
+    tag.classList.remove('passed');
+    return;
+  }
+  const d = new Date(currentDeadline);
+  const label = `登記截止:${d.toLocaleString('zh-TW')}`;
+  if(isDeadlinePassed()){
+    tag.textContent = `${label}（已截止）`;
+    tag.classList.add('passed');
+  }else{
+    tag.textContent = label;
+    tag.classList.remove('passed');
+  }
+}
+
+el('editDeadlineBtn').addEventListener('click', async () => {
+  const pin = prompt('請輸入主辦人密碼以設定截止時間：');
+  if(pin === null) return;
+  if(pin !== ORGANIZER_PIN){
+    alert('密碼錯誤，只有主辦人能設定截止時間');
+    return;
+  }
+  const current = currentDeadline ? new Date(currentDeadline) : null;
+  const defaultVal = current ? current.toISOString().slice(0,16) : '';
+  const input = prompt('請輸入截止時間（格式：YYYY-MM-DDTHH:MM，例如 2026-08-10T20:00），留空可清除截止時間：', defaultVal);
+  if(input === null) return;
+  const trimmed = input.trim();
+  if(!trimmed){
+    currentDeadline = '';
+    renderDeadlineTag();
+    applyLockState();
+    await saveDeadline('');
+    return;
+  }
+  const parsed = new Date(trimmed);
+  if(isNaN(parsed.getTime())){
+    alert('時間格式看起來不太對，請照範例格式輸入');
+    return;
+  }
+  currentDeadline = parsed.toISOString();
+  renderDeadlineTag();
+  applyLockState();
+  await saveDeadline(currentDeadline);
+});
 
 init();
 </script>
+
 </body>
 </html>
