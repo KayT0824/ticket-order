@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>購票登記</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -503,7 +505,7 @@
       <h2>大家的登記</h2>
       <button class="export-btn" id="exportBtn">匯出 Excel</button>
     </div>
-    <div id="tableWrap"></div>
+    <div id="tableWrap"><div class="empty-state">載入中…</div></div>
     <div class="totals">
       <div class="t-item">
         <div class="v" id="sumQty">0</div>
@@ -573,7 +575,7 @@ function applyLockState(){
     warnBtn.style.display = 'inline-block';
   }else if(deadlinePassed){
     const d = new Date(currentDeadline);
-    bannerText.textContent = `⏰ 這場登記已於 ${d.toLocaleString('zh-TW')} 截止，無法再填寫或修改`;
+    bannerText.textContent = `⏰ 這場登記已於 ${d.toLocaleDateString('zh-TW')} 截止，無法再填寫或修改`;
     warnBtn.style.display = 'none';
   }
 }
@@ -587,6 +589,15 @@ function setStatus(msg, isErr){
 
 function fmtMoney(n){
   return '$' + Number(n).toLocaleString();
+}
+
+async function loadEventData(){
+  try{
+    const res = await fetch(`${API_URL}?action=getEventData&event=${encodeURIComponent(EVENT_ID)}`);
+    return await res.json();
+  }catch(e){
+    return { title: '', deadline: '', orders: [], volunteers: [] };
+  }
 }
 
 async function loadOrders(){
@@ -1140,13 +1151,8 @@ async function init(){
   }
   el('eventTag').textContent = `場次代碼:${EVENT_ID}`;
 
-  const [, title, deadline, orders, volunteers] = await Promise.all([
-    registerCurrentEvent(),
-    loadTitle(),
-    loadDeadline(),
-    loadOrders(),
-    loadVolunteers()
-  ]);
+  registerCurrentEvent(); // 不等待，不擋畫面顯示
+  const { title, deadline, orders, volunteers } = await loadEventData();
 
   if(title){
     titleDisplay.textContent = title;
@@ -1179,7 +1185,7 @@ function renderDeadlineTag(){
     return;
   }
   const d = new Date(currentDeadline);
-  const label = `登記截止:${d.toLocaleString('zh-TW')}`;
+  const label = `登記截止:${d.toLocaleDateString('zh-TW')}`;
   if(isDeadlinePassed()){
     tag.textContent = `${label}（已截止）`;
     tag.classList.add('passed');
@@ -1197,8 +1203,8 @@ el('editDeadlineBtn').addEventListener('click', async () => {
     return;
   }
   const current = currentDeadline ? new Date(currentDeadline) : null;
-  const defaultVal = current ? current.toISOString().slice(0,16) : '';
-  const input = prompt('請輸入截止時間（格式：YYYY-MM-DDTHH:MM，例如 2026-08-10T20:00），留空可清除截止時間：', defaultVal);
+  const defaultVal = current ? current.toISOString().slice(0,10) : '';
+  const input = prompt('請輸入截止日期（格式：YYYY-MM-DD，例如 2026-08-10），登記會在當天 23:59 截止，留空可清除截止時間：', defaultVal);
   if(input === null) return;
   const trimmed = input.trim();
   if(!trimmed){
@@ -1208,9 +1214,9 @@ el('editDeadlineBtn').addEventListener('click', async () => {
     await saveDeadline('');
     return;
   }
-  const parsed = new Date(trimmed);
+  const parsed = new Date(`${trimmed}T23:59:59`);
   if(isNaN(parsed.getTime())){
-    alert('時間格式看起來不太對，請照範例格式輸入');
+    alert('日期格式看起來不太對，請照範例格式輸入，例如 2026-08-10');
     return;
   }
   currentDeadline = parsed.toISOString();
