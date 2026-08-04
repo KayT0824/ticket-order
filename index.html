@@ -466,7 +466,7 @@
       <div class="stub-eyebrow">團體購票登記</div>
       <div id="titleDisplay" class="stub-title">點兩下編輯場次名稱</div>
       <input id="titleInput" class="stub-title-input" style="display:none" placeholder="輸入場次 / 活動名稱" />
-      <button class="stub-edit" id="editTitleBtn">編輯場次名稱</button>
+      <button class="stub-edit" id="editTitleBtn">編輯場次名稱🔒</button>
       <div class="deadline-row">
         <div class="deadline-tag" id="deadlineTag">尚未設定截止時間</div>
         <button class="stub-edit" id="editDeadlineBtn">設定截止時間🔒</button>
@@ -504,8 +504,8 @@
           <input id="inpNewEvent" type="text" placeholder="例如 0801演唱會" />
         </div>
       </div>
-      <button class="submit-btn" id="createEventBtn" style="margin-top:10px;">建立並前往新場次</button>
-      <div class="hint">建立後會自動產生新連結並切換過去，之後把新連結分享出去即可，舊場次資料不會受影響。</div>
+      <button class="submit-btn" id="createEventBtn" style="margin-top:10px;">建立並前往新場次🔒</button>
+      <div class="hint">需要輸入主辦人密碼才能建立。建立後會自動產生新連結並切換過去，之後把新連結分享出去即可，舊場次資料不會受影響。</div>
     </div>
   </div>
 
@@ -1014,6 +1014,12 @@ const titleInput = el('titleInput');
 const editTitleBtn = el('editTitleBtn');
 
 function enterTitleEdit(){
+  const pin = prompt('請輸入主辦人密碼以編輯場次名稱：');
+  if(pin === null) return;
+  if(pin !== ORGANIZER_PIN){
+    alert('密碼錯誤，只有主辦人能設定場次名稱');
+    return;
+  }
   titleInput.value = titleDisplay.dataset.raw === 'placeholder' ? '' : titleDisplay.textContent;
   titleDisplay.style.display = 'none';
   titleInput.style.display = 'block';
@@ -1173,6 +1179,12 @@ el('createEventBtn').addEventListener('click', async () => {
   const name = el('inpNewEvent').value.trim();
   if(!name){
     setStatus('請先填寫新場次的名稱', true);
+    return;
+  }
+  const pin = prompt('請輸入主辦人密碼以建立新場次：');
+  if(pin === null) return;
+  if(pin !== ORGANIZER_PIN){
+    alert('密碼錯誤，只有主辦人能建立新場次');
     return;
   }
   const slug = name.replace(/\s+/g, '-');
