@@ -41,6 +41,42 @@
     box-shadow:0 8px 24px rgba(27,36,48,0.18);
     position:relative;
   }
+  .warn-banner{
+    background:#FBEAE8;
+    border:1px solid #F0BDB8;
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .warn-text{
+    color:var(--stamp);
+    font-size:13.5px;
+    font-weight:600;
+    flex:1;
+    min-width:200px;
+  }
+  .warn-btn{
+    background:var(--stamp);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:9px 14px;
+    font-size:13px;
+    font-weight:600;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .warn-btn:hover{background:#A6392F;}
+  .form-locked{
+    opacity:0.45;
+    pointer-events:none;
+  }
   .stub-main{
     flex:1;
     padding:22px 20px;
@@ -356,6 +392,11 @@
 <body>
 <div class="wrap">
 
+  <div class="warn-banner" id="warnBanner" style="display:none;">
+    <div class="warn-text">⚠️ 這個連結還沒有設定正式場次，請先確認你拿到的是不是正確的活動連結</div>
+    <button class="warn-btn" id="warnSwitchBtn">切換到正確場次</button>
+  </div>
+
   <div class="stub">
     <div class="stub-main">
       <div class="stub-eyebrow">團體購票登記</div>
@@ -377,7 +418,7 @@
     </div>
   </div>
 
-  <div class="card event-panel">
+  <div class="card event-panel" id="eventPanelWrap">
     <div class="card-header-row" style="margin-bottom:10px;">
       <h2 style="font-size:13px;">📅 場次管理</h2>
       <button class="export-btn" id="toggleEventPanelBtn">切換 / 新增場次</button>
@@ -400,7 +441,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="registerCard">
     <h2>填寫我的登記</h2>
     <div class="field-row">
       <div class="field name">
@@ -425,7 +466,7 @@
     <div class="status" id="statusMsg"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="volunteerCard">
     <h2>🙋 自願幫忙搶票</h2>
     <div class="field-row">
       <div class="field name" style="flex:1;">
@@ -475,6 +516,22 @@ const EVENT_ID = new URLSearchParams(window.location.search).get('event') || 'de
 const el = (id) => document.getElementById(id);
 let ordersCache = [];
 let volunteersCache = [];
+let isEventConfigured = false;
+
+function applyLockState(){
+  const banner = el('warnBanner');
+  const registerCard = el('registerCard');
+  const volunteerCard = el('volunteerCard');
+  if(isEventConfigured){
+    banner.style.display = 'none';
+    registerCard.classList.remove('form-locked');
+    volunteerCard.classList.remove('form-locked');
+  }else{
+    banner.style.display = 'flex';
+    registerCard.classList.add('form-locked');
+    volunteerCard.classList.add('form-locked');
+  }
+}
 const tableWrap = el('tableWrap');
 const statusMsg = el('statusMsg');
 
@@ -767,6 +824,11 @@ noPriceCheck.addEventListener('change', () => {
 });
 
 el('submitBtn').addEventListener('click', async () => {
+  if(!isEventConfigured){
+    setStatus('這個場次還沒有設定名稱，請先切換到正確的場次連結', true);
+    openEventPanel();
+    return;
+  }
   const name = el('inpName').value.trim();
   const qty = parseInt(el('inpQty').value, 10);
   const noPrice = noPriceCheck.checked;
@@ -795,6 +857,11 @@ el('submitBtn').addEventListener('click', async () => {
 });
 
 el('volunteerBtn').addEventListener('click', () => {
+  if(!isEventConfigured){
+    setStatus('這個場次還沒有設定名稱，請先切換到正確的場次連結', true);
+    openEventPanel();
+    return;
+  }
   const nameInput = el('inpVolunteer');
   const name = nameInput.value.trim();
   if(!name) return;
@@ -839,6 +906,8 @@ async function commitTitle(){
   if(val){
     titleDisplay.textContent = val;
     titleDisplay.dataset.raw = 'text';
+    isEventConfigured = true;
+    applyLockState();
     await saveTitle(val);
   }
 }
@@ -942,19 +1011,31 @@ function buildEventUrl(eventId){
   return url.toString();
 }
 
-el('toggleEventPanelBtn').addEventListener('click', async () => {
+async function openEventPanel(){
+  const body = el('eventPanelBody');
+  body.style.display = 'block';
+  const events = await listEvents();
+  const switcher = el('eventSwitcher');
+  switcher.innerHTML = '<option value="">請選擇場次…</option>' + events.map(ev => {
+    const label = ev.title ? `${ev.title}（${ev.event}）` : `${ev.event}（尚未設定標題）`;
+    const selected = ev.event === EVENT_ID ? 'selected' : '';
+    return `<option value="${escapeHtml(ev.event)}" ${selected}>${escapeHtml(label)}</option>`;
+  }).join('');
+  el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+el('toggleEventPanelBtn').addEventListener('click', () => {
   const body = el('eventPanelBody');
   const isHidden = body.style.display === 'none';
-  body.style.display = isHidden ? 'block' : 'none';
   if(isHidden){
-    const events = await listEvents();
-    const switcher = el('eventSwitcher');
-    switcher.innerHTML = '<option value="">請選擇場次…</option>' + events.map(ev => {
-      const label = ev.title ? `${ev.title}（${ev.event}）` : ev.event;
-      const selected = ev.event === EVENT_ID ? 'selected' : '';
-      return `<option value="${escapeHtml(ev.event)}" ${selected}>${escapeHtml(label)}</option>`;
-    }).join('');
+    openEventPanel();
+  }else{
+    body.style.display = 'none';
   }
+});
+
+el('warnSwitchBtn').addEventListener('click', () => {
+  openEventPanel();
 });
 
 el('eventSwitcher').addEventListener('change', (e) => {
@@ -1002,9 +1083,12 @@ async function init(){
   if(title){
     titleDisplay.textContent = title;
     titleDisplay.dataset.raw = 'text';
+    isEventConfigured = true;
   }else{
     titleDisplay.dataset.raw = 'placeholder';
+    isEventConfigured = false;
   }
+  applyLockState();
 
   setOrders(orders);
   volunteersCache = volunteers;
