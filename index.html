@@ -6,7 +6,6 @@
 <title>購票登記</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --paper:#EEF1F6;
@@ -474,6 +473,8 @@ const VOLUNTEERS_KEY = 'volunteers';
 const EVENT_ID = new URLSearchParams(window.location.search).get('event') || 'default';
 
 const el = (id) => document.getElementById(id);
+let ordersCache = [];
+let volunteersCache = [];
 const tableWrap = el('tableWrap');
 const statusMsg = el('statusMsg');
 
@@ -598,14 +599,16 @@ function renderVolunteers(list){
   `).join('');
 
   wrap.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       if(btn.disabled) return;
       const name = btn.getAttribute('data-name');
-      btn.disabled = true;
-      btn.textContent = '…';
-      await removeVolunteerAPI(name);
-      const updated = await loadVolunteers();
-      renderVolunteers(updated);
+      const optimistic = list.filter(v => v.name !== name);
+      volunteersCache = optimistic;
+      renderVolunteers(optimistic);
+
+      removeVolunteerAPI(name).then(ok => {
+        if(!ok) setStatus('移除志工失敗，請再試一次', true);
+      });
     });
   });
 }
@@ -655,14 +658,21 @@ function renderTable(list){
   </table>`;
 
   tableWrap.querySelectorAll('.move-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       if(btn.disabled) return;
-      tableWrap.querySelectorAll('.move-btn, .del-btn, .edit-btn').forEach(b => b.disabled = true);
       const idx = parseInt(btn.getAttribute('data-idx'), 10);
       const dir = btn.getAttribute('data-dir');
+      const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
+      if(targetIdx < 0 || targetIdx >= list.length) return;
       const name = list[idx].name;
-      await moveOrderAPI(name, dir);
-      await refresh();
+
+      const optimistic = [...list];
+      [optimistic[idx], optimistic[targetIdx]] = [optimistic[targetIdx], optimistic[idx]];
+      setOrders(optimistic);
+
+      moveOrderAPI(name, dir).then(ok => {
+        if(!ok) setStatus('順序更新失敗，畫面可能與試算表不同步，請重新整理', true);
+      });
     });
   });
 
@@ -686,15 +696,16 @@ function renderTable(list){
   });
 
   tableWrap.querySelectorAll('.del-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       if(btn.disabled) return;
       if(btn.dataset.confirm === '1'){
         const name = btn.getAttribute('data-name');
-        btn.disabled = true;
-        btn.textContent = '刪除中…';
-        tableWrap.querySelectorAll('.move-btn, .edit-btn').forEach(b => b.disabled = true);
-        await deleteOrderAPI(name);
-        await refresh();
+        const optimistic = list.filter(o => o.name !== name);
+        setOrders(optimistic);
+
+        deleteOrderAPI(name).then(ok => {
+          if(!ok) setStatus('刪除失敗，畫面可能與試算表不同步，請重新整理', true);
+        });
         return;
       }
       btn.dataset.confirm = '1';
@@ -738,6 +749,11 @@ function updateTotals(list){
 
 async function refresh(){
   const list = await loadOrders();
+  setOrders(list);
+}
+
+function setOrders(list){
+  ordersCache = list;
   renderTable(list);
   updateTotals(list);
 }
@@ -761,32 +777,40 @@ el('submitBtn').addEventListener('click', async () => {
   if(!qty || qty <= 0){ setStatus('請填寫有效的張數', true); return; }
   if(!noPrice && (isNaN(price) || price < 0)){ setStatus('請填寫願付金額，或勾選「不限金額」', true); return; }
 
-  el('submitBtn').disabled = true;
-  setStatus('送出中…');
-
   const newEntry = { name, qty, price: noPrice ? null : price, ts: Date.now() };
-  const ok = await upsertOrderAPI(newEntry);
-  el('submitBtn').disabled = false;
-
-  if(ok){
-    setStatus('已送出，感謝登記！');
-    await refresh();
+  const existingIdx = ordersCache.findIndex(o => o.name === name);
+  let optimistic;
+  if(existingIdx > -1){
+    optimistic = [...ordersCache];
+    optimistic[existingIdx] = newEntry;
   }else{
-    setStatus('送出失敗，請再試一次', true);
+    optimistic = [...ordersCache, newEntry];
   }
+  setOrders(optimistic);
+  setStatus('已送出，感謝登記！');
+
+  upsertOrderAPI(newEntry).then(ok => {
+    if(!ok) setStatus('送出失敗，請再試一次', true);
+  });
 });
 
-el('volunteerBtn').addEventListener('click', async () => {
+el('volunteerBtn').addEventListener('click', () => {
   const nameInput = el('inpVolunteer');
   const name = nameInput.value.trim();
   if(!name) return;
-
-  el('volunteerBtn').disabled = true;
-  await addVolunteerAPI({ name, ts: Date.now() });
+  if(volunteersCache.some(v => v.name === name)){
+    nameInput.value = '';
+    return;
+  }
   nameInput.value = '';
-  el('volunteerBtn').disabled = false;
-  const updated = await loadVolunteers();
-  renderVolunteers(updated);
+
+  const optimistic = [...volunteersCache, { name, ts: Date.now() }];
+  volunteersCache = optimistic;
+  renderVolunteers(optimistic);
+
+  addVolunteerAPI({ name, ts: Date.now() }).then(ok => {
+    if(!ok) setStatus('新增志工失敗，請再試一次', true);
+  });
 });
 
 el('inpVolunteer').addEventListener('keydown', (e) => {
@@ -824,12 +848,38 @@ titleInput.addEventListener('keydown', (e) => {
   if(e.key === 'Enter'){ titleInput.blur(); }
 });
 
+let xlsxLoadPromise = null;
+function ensureXlsxLoaded(){
+  if(window.XLSX) return Promise.resolve();
+  if(xlsxLoadPromise) return xlsxLoadPromise;
+  xlsxLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+  return xlsxLoadPromise;
+}
+
 el('exportBtn').addEventListener('click', async () => {
-  const list = await loadOrders();
-  if(!list.length){
+  if(!ordersCache.length){
     setStatus('目前還沒有資料可以匯出', true);
     return;
   }
+  const exportBtn = el('exportBtn');
+  exportBtn.disabled = true;
+  exportBtn.textContent = '準備中…';
+  try{
+    await ensureXlsxLoaded();
+  }catch(e){
+    setStatus('匯出套件載入失敗，請檢查網路連線後再試一次', true);
+    exportBtn.disabled = false;
+    exportBtn.textContent = '匯出 Excel';
+    return;
+  }
+
+  const list = ordersCache;
   const rows = list.map((o, idx) => {
     const hasPrice = o.price !== null && o.price !== undefined;
     return {
@@ -852,7 +902,7 @@ el('exportBtn').addEventListener('click', async () => {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '購票登記');
 
-  const volunteers = await loadVolunteers();
+  const volunteers = volunteersCache;
   if(volunteers.length){
     const vRows = [...volunteers].sort((a,b) => a.ts - b.ts).map(v => ({ '姓名': v.name }));
     const wsV = XLSX.utils.json_to_sheet(vRows);
@@ -863,6 +913,9 @@ el('exportBtn').addEventListener('click', async () => {
   const eventTitle = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '購票登記';
   const filename = `${eventTitle}_購票登記_${new Date().toISOString().slice(0,10)}.xlsx`;
   XLSX.writeFile(wb, filename);
+
+  exportBtn.disabled = false;
+  exportBtn.textContent = '匯出 Excel';
 });
 
 async function listEvents(){
@@ -938,16 +991,23 @@ async function init(){
     return;
   }
   el('eventTag').textContent = `場次代碼:${EVENT_ID}`;
-  await registerCurrentEvent();
-  const title = await loadTitle();
+
+  const [, title, orders, volunteers] = await Promise.all([
+    registerCurrentEvent(),
+    loadTitle(),
+    loadOrders(),
+    loadVolunteers()
+  ]);
+
   if(title){
     titleDisplay.textContent = title;
     titleDisplay.dataset.raw = 'text';
   }else{
     titleDisplay.dataset.raw = 'placeholder';
   }
-  await refresh();
-  const volunteers = await loadVolunteers();
+
+  setOrders(orders);
+  volunteersCache = volunteers;
   renderVolunteers(volunteers);
 }
 
