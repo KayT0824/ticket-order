@@ -503,6 +503,10 @@
         </div>
       </div>
       <button class="submit-btn" id="createEventBtn" style="margin-top:10px;">建立並前往新場次🔒</button>
+      <label class="price-check" style="margin-top:8px;">
+        <input type="checkbox" id="inpSetAsCurrent" checked />
+        同時把固定連結指向這個新場次（建議勾選）
+      </label>
       <div class="hint">需要輸入主辦人密碼才能建立。建立後會自動產生新連結並切換過去，之後把新連結分享出去即可，舊場次資料不會受影響。</div>
 
       <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
@@ -515,6 +519,12 @@
       </div>
       <button class="submit-btn" id="renameTitleBtn" style="margin-top:10px;background:var(--gold-deep);">更新目前場次標題🔒</button>
       <div class="hint">只會更改你現在瀏覽的這個場次（場次代碼:<span id="renameEventTag"></span>），不會建立新連結。</div>
+
+      <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+      <div class="hint" style="margin-bottom:8px;">🔗 固定連結（不帶場次代碼的那個網址）目前指向:<strong id="currentPointerTag">讀取中…</strong></div>
+      <button class="submit-btn" id="setCurrentBtn" style="background:var(--stamp);">把固定連結指向「目前這個場次」🔒</button>
+      <div class="hint">設定後，任何人打開不帶場次代碼的固定連結（例如放在共用夾裡的那個），都會自動看到這個場次，不用更換分享出去的連結。</div>
     </div>
   </div>
 
@@ -591,7 +601,7 @@ const ORGANIZER_PIN = '0824';
 const ORDERS_KEY = 'orders';
 const TITLE_KEY = 'event-title';
 const VOLUNTEERS_KEY = 'volunteers';
-const EVENT_ID = new URLSearchParams(window.location.search).get('event') || 'default';
+let EVENT_ID = new URLSearchParams(window.location.search).get('event') || 'default';
 
 const el = (id) => document.getElementById(id);
 let ordersCache = [];
@@ -1138,6 +1148,27 @@ function buildEventUrl(eventId){
   return url.toString();
 }
 
+async function loadCurrentEventInfo(){
+  try{
+    const res = await fetch(`${API_URL}?action=getCurrentEventInfo`);
+    const data = await res.json();
+    return data.current || '';
+  }catch(e){
+    return '';
+  }
+}
+
+async function refreshPointerTag(){
+  const tag = el('currentPointerTag');
+  tag.textContent = '讀取中…';
+  const current = await loadCurrentEventInfo();
+  if(!current){
+    tag.textContent = '尚未設定（目前會顯示「尚未設定正式場次」警告）';
+  }else{
+    tag.textContent = current === EVENT_ID ? `${current}（就是目前這個場次）` : current;
+  }
+}
+
 async function openEventPanel(){
   const body = el('eventPanelBody');
   body.style.display = 'block';
@@ -1150,8 +1181,24 @@ async function openEventPanel(){
   }).join('');
   el('inpRenameTitle').value = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '';
   el('renameEventTag').textContent = EVENT_ID;
+  refreshPointerTag();
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+el('setCurrentBtn').addEventListener('click', async () => {
+  const pin = prompt('請輸入主辦人密碼以設定固定連結指向的場次：');
+  if(pin === null) return;
+  if(pin !== ORGANIZER_PIN){
+    alert('密碼錯誤，只有主辦人能設定這個');
+    return;
+  }
+  await fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'setCurrentEvent', event: EVENT_ID })
+  });
+  setStatus('已將固定連結指向這個場次！');
+  refreshPointerTag();
+});
 
 el('toggleEventPanelBtn').addEventListener('click', () => {
   const body = el('eventPanelBody');
@@ -1167,10 +1214,11 @@ el('warnSwitchBtn').addEventListener('click', () => {
   openEventPanel();
 });
 
-el('eventSwitcher').addEventListener('change', (e) => {
+el('eventSwitcher').addEventListener('change', async (e) => {
   const chosen = e.target.value;
   if(chosen && chosen !== EVENT_ID){
-    window.location.href = buildEventUrl(chosen);
+    el('eventPanelBody').style.display = 'none';
+    await switchToEvent(chosen);
   }
 });
 
@@ -1187,6 +1235,7 @@ el('createEventBtn').addEventListener('click', async () => {
     return;
   }
   const slug = name.replace(/\s+/g, '-');
+  const setAsCurrent = el('inpSetAsCurrent').checked;
   el('createEventBtn').disabled = true;
   setStatus('建立場次中…');
   try{
@@ -1194,28 +1243,43 @@ el('createEventBtn').addEventListener('click', async () => {
       method: 'POST',
       body: JSON.stringify({ action: 'saveTitle', event: slug, data: name })
     });
-    window.location.href = buildEventUrl(slug);
+    if(setAsCurrent){
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'setCurrentEvent', event: slug })
+      });
+    }
+    el('eventPanelBody').style.display = 'none';
+    el('inpNewEvent').value = '';
+    el('createEventBtn').disabled = false;
+    await switchToEvent(slug);
   }catch(e){
     setStatus('建立失敗，請再試一次', true);
     el('createEventBtn').disabled = false;
   }
 });
 
-async function init(){
-  if(API_URL.includes('PASTE_YOUR')){
-    setStatus('⚠️ 尚未設定 API_URL，請先部署 Apps Script 並貼上網址（見程式碼開頭註解）', true);
-    return;
-  }
-  el('eventTag').textContent = `場次代碼:${EVENT_ID}`;
+async function loadEventPage(){
+  el('tableWrap').innerHTML = '<div class="empty-state">載入中…</div>';
+  el('volunteerList').innerHTML = '<div class="volunteer-empty">載入中…</div>';
 
   registerCurrentEvent(); // 不等待，不擋畫面顯示
-  const { title, deadline, orders, volunteers } = await loadEventData();
+  const wasDefault = EVENT_ID === 'default';
+  const { resolvedEvent, title, deadline, orders, volunteers } = await loadEventData();
+
+  if(wasDefault && resolvedEvent && resolvedEvent !== 'default'){
+    EVENT_ID = resolvedEvent; // 固定連結背後實際指向的場次代碼
+  }
+  el('eventTag').textContent = wasDefault
+    ? `場次代碼:${EVENT_ID}（透過固定連結）`
+    : `場次代碼:${EVENT_ID}`;
 
   if(title){
     titleDisplay.textContent = title;
     titleDisplay.dataset.raw = 'text';
     isEventConfigured = true;
   }else{
+    titleDisplay.textContent = '尚未設定場次標題';
     titleDisplay.dataset.raw = 'placeholder';
     isEventConfigured = false;
   }
@@ -1227,6 +1291,37 @@ async function init(){
   setOrders(orders);
   volunteersCache = volunteers;
   renderVolunteers(volunteers);
+}
+
+function resetRegisterForm(){
+  el('inpName').value = '';
+  el('inpQty').value = '';
+  priceInput.value = '';
+  priceInput.disabled = false;
+  noPriceCheck.checked = false;
+  el('inpVolunteer').value = '';
+  setStatus('');
+}
+
+async function switchToEvent(newEventId){
+  EVENT_ID = newEventId;
+  history.pushState({}, '', buildEventUrl(newEventId));
+  resetRegisterForm();
+  await loadEventPage();
+}
+
+window.addEventListener('popstate', () => {
+  EVENT_ID = new URLSearchParams(window.location.search).get('event') || 'default';
+  resetRegisterForm();
+  loadEventPage();
+});
+
+async function init(){
+  if(API_URL.includes('PASTE_YOUR')){
+    setStatus('⚠️ 尚未設定 API_URL，請先部署 Apps Script 並貼上網址（見程式碼開頭註解）', true);
+    return;
+  }
+  await loadEventPage();
 
   setInterval(() => {
     renderDeadlineTag();
