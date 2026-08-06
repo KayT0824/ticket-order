@@ -464,9 +464,7 @@
   <div class="stub">
     <div class="stub-main">
       <div class="stub-eyebrow">團體購票登記</div>
-      <div id="titleDisplay" class="stub-title">點兩下編輯場次名稱</div>
-      <input id="titleInput" class="stub-title-input" style="display:none" placeholder="輸入場次 / 活動名稱" />
-      <button class="stub-edit" id="editTitleBtn">編輯場次名稱🔒</button>
+      <div id="titleDisplay" class="stub-title">尚未設定場次標題</div>
       <div class="deadline-row">
         <div class="deadline-tag" id="deadlineTag">尚未設定截止時間</div>
         <button class="stub-edit" id="editDeadlineBtn">設定截止時間🔒</button>
@@ -506,6 +504,17 @@
       </div>
       <button class="submit-btn" id="createEventBtn" style="margin-top:10px;">建立並前往新場次🔒</button>
       <div class="hint">需要輸入主辦人密碼才能建立。建立後會自動產生新連結並切換過去，之後把新連結分享出去即可，舊場次資料不會受影響。</div>
+
+      <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+      <div class="field-row">
+        <div class="field" style="flex:1;">
+          <label>重新命名「目前這個場次」的標題</label>
+          <input id="inpRenameTitle" type="text" placeholder="輸入新的場次標題" />
+        </div>
+      </div>
+      <button class="submit-btn" id="renameTitleBtn" style="margin-top:10px;background:var(--gold-deep);">更新目前場次標題🔒</button>
+      <div class="hint">只會更改你現在瀏覽的這個場次（場次代碼:<span id="renameEventTag"></span>），不會建立新連結。</div>
     </div>
   </div>
 
@@ -1008,43 +1017,31 @@ el('inpVolunteer').addEventListener('keydown', (e) => {
   if(e.key === 'Enter'){ el('volunteerBtn').click(); }
 });
 
-// Title editing
+// Title display + rename (via 場次管理 panel)
 const titleDisplay = el('titleDisplay');
-const titleInput = el('titleInput');
-const editTitleBtn = el('editTitleBtn');
 
-function enterTitleEdit(){
-  const pin = prompt('請輸入主辦人密碼以編輯場次名稱：');
+async function applyTitleUpdate(val){
+  titleDisplay.textContent = val;
+  titleDisplay.dataset.raw = 'text';
+  isEventConfigured = true;
+  applyLockState();
+  await saveTitle(val);
+}
+
+el('renameTitleBtn').addEventListener('click', async () => {
+  const val = el('inpRenameTitle').value.trim();
+  if(!val){
+    setStatus('請先輸入新的場次標題', true);
+    return;
+  }
+  const pin = prompt('請輸入主辦人密碼以更新場次標題：');
   if(pin === null) return;
   if(pin !== ORGANIZER_PIN){
     alert('密碼錯誤，只有主辦人能設定場次名稱');
     return;
   }
-  titleInput.value = titleDisplay.dataset.raw === 'placeholder' ? '' : titleDisplay.textContent;
-  titleDisplay.style.display = 'none';
-  titleInput.style.display = 'block';
-  titleInput.focus();
-}
-
-titleDisplay.addEventListener('dblclick', enterTitleEdit);
-editTitleBtn.addEventListener('click', enterTitleEdit);
-
-async function commitTitle(){
-  const val = titleInput.value.trim();
-  titleInput.style.display = 'none';
-  titleDisplay.style.display = 'block';
-  if(val){
-    titleDisplay.textContent = val;
-    titleDisplay.dataset.raw = 'text';
-    isEventConfigured = true;
-    applyLockState();
-    await saveTitle(val);
-  }
-}
-
-titleInput.addEventListener('blur', commitTitle);
-titleInput.addEventListener('keydown', (e) => {
-  if(e.key === 'Enter'){ titleInput.blur(); }
+  await applyTitleUpdate(val);
+  setStatus('場次標題已更新！');
 });
 
 let xlsxLoadPromise = null;
@@ -1151,6 +1148,8 @@ async function openEventPanel(){
     const selected = ev.event === EVENT_ID ? 'selected' : '';
     return `<option value="${escapeHtml(ev.event)}" ${selected}>${escapeHtml(label)}</option>`;
   }).join('');
+  el('inpRenameTitle').value = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '';
+  el('renameEventTag').textContent = EVENT_ID;
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
