@@ -300,6 +300,17 @@
     cursor:pointer;
   }
   .export-btn:hover{border-color:var(--gold-deep);color:var(--gold-deep);}
+  .link-btn{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:12px;
+    cursor:pointer;
+    padding:4px 0;
+    text-decoration:underline;
+    font-family:'Inter',sans-serif;
+  }
+  .link-btn:hover{color:var(--gold-deep);}
   .no-price-tag{
     color:var(--ink-soft);
     font-style:italic;
@@ -467,7 +478,7 @@
       <div id="titleDisplay" class="stub-title">尚未設定場次標題</div>
       <div class="deadline-row">
         <div class="deadline-tag" id="deadlineTag">尚未設定截止時間</div>
-        <button class="stub-edit" id="editDeadlineBtn">設定截止時間🔒</button>
+        <button class="stub-edit" id="editDeadlineBtn" style="display:none;">設定截止時間🔒</button>
       </div>
       <div class="event-tag" id="eventTag"></div>
     </div>
@@ -486,45 +497,65 @@
 
   <div class="card event-panel" id="eventPanelWrap">
     <div class="card-header-row" style="margin-bottom:10px;">
-      <h2 style="font-size:13px;">📅 場次管理</h2>
-      <button class="export-btn" id="toggleEventPanelBtn">切換 / 新增場次</button>
+      <h2 style="font-size:13px;">📅 場次</h2>
+      <button class="export-btn" id="toggleEventPanelBtn">切換場次</button>
     </div>
     <div id="eventPanelBody" style="display:none;">
-      <div class="field" style="margin-bottom:12px;">
+      <div class="field">
         <label>切換到現有場次</label>
         <select id="eventSwitcher">
           <option value="">請選擇場次…</option>
         </select>
       </div>
-      <div class="field-row">
-        <div class="field" style="flex:1;">
-          <label>建立新場次(輸入名稱)</label>
-          <input id="inpNewEvent" type="text" placeholder="例如 0801演唱會" />
-        </div>
+
+      <div style="text-align:right;margin-top:10px;">
+        <button class="link-btn" id="unlockOrganizerBtn">🔧 主辦人功能</button>
       </div>
-      <button class="submit-btn" id="createEventBtn" style="margin-top:10px;">建立並前往新場次🔒</button>
-      <label class="price-check" style="margin-top:8px;">
-        <input type="checkbox" id="inpSetAsCurrent" checked />
-        同時把固定連結指向這個新場次（建議勾選）
-      </label>
-      <div class="hint">需要輸入主辦人密碼才能建立。建立後會自動產生新連結並切換過去，之後把新連結分享出去即可，舊場次資料不會受影響。</div>
 
-      <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+      <div id="organizerSection" style="display:none;">
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
-      <div class="field-row">
-        <div class="field" style="flex:1;">
-          <label>重新命名「目前這個場次」的標題</label>
-          <input id="inpRenameTitle" type="text" placeholder="輸入新的場次標題" />
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>建立新場次(輸入名稱)</label>
+            <input id="inpNewEvent" type="text" placeholder="例如 0801演唱會" />
+          </div>
         </div>
+        <button class="submit-btn" id="createEventBtn" style="margin-top:10px;">建立並前往新場次</button>
+        <label class="price-check" style="margin-top:8px;">
+          <input type="checkbox" id="inpSetAsCurrent" checked />
+          同時把固定連結指向這個新場次（建議勾選）
+        </label>
+        <div class="hint">建立後會自動產生新連結並切換過去，之後把新連結分享出去即可，舊場次資料不會受影響。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>重新命名「目前這個場次」的標題</label>
+            <input id="inpRenameTitle" type="text" placeholder="輸入新的場次標題" />
+          </div>
+        </div>
+        <button class="submit-btn" id="renameTitleBtn" style="margin-top:10px;background:var(--gold-deep);">更新目前場次標題</button>
+        <div class="hint">只會更改你現在瀏覽的這個場次（場次代碼:<span id="renameEventTag"></span>），不會建立新連結。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="hint" style="margin-bottom:8px;">🔗 固定連結（不帶場次代碼的那個網址）目前指向:<strong id="currentPointerTag">讀取中…</strong></div>
+        <button class="submit-btn" id="setCurrentBtn" style="background:var(--stamp);">把固定連結指向「目前這個場次」</button>
+        <div class="hint">設定後，任何人打開不帶場次代碼的固定連結（例如放在共用夾裡的那個），都會自動看到這個場次，不用更換分享出去的連結。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>設定截止日期</label>
+            <input id="inpDeadlineInline" type="date" />
+          </div>
+        </div>
+        <button class="submit-btn" id="saveDeadlineInlineBtn" style="margin-top:10px;">更新截止日期</button>
+        <div class="hint">留空並送出可以清除截止日期。</div>
       </div>
-      <button class="submit-btn" id="renameTitleBtn" style="margin-top:10px;background:var(--gold-deep);">更新目前場次標題🔒</button>
-      <div class="hint">只會更改你現在瀏覽的這個場次（場次代碼:<span id="renameEventTag"></span>），不會建立新連結。</div>
-
-      <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
-
-      <div class="hint" style="margin-bottom:8px;">🔗 固定連結（不帶場次代碼的那個網址）目前指向:<strong id="currentPointerTag">讀取中…</strong></div>
-      <button class="submit-btn" id="setCurrentBtn" style="background:var(--stamp);">把固定連結指向「目前這個場次」🔒</button>
-      <div class="hint">設定後，任何人打開不帶場次代碼的固定連結（例如放在共用夾裡的那個），都會自動看到這個場次，不用更換分享出去的連結。</div>
     </div>
   </div>
 
@@ -608,6 +639,22 @@ let ordersCache = [];
 let volunteersCache = [];
 let isEventConfigured = false;
 let currentDeadline = '';
+let isOrganizerMode = false;
+
+function unlockOrganizer(){
+  if(isOrganizerMode) return true;
+  const pin = prompt('請輸入主辦人密碼：');
+  if(pin === null) return false;
+  if(pin !== ORGANIZER_PIN){
+    alert('密碼錯誤');
+    return false;
+  }
+  isOrganizerMode = true;
+  el('editDeadlineBtn').style.display = 'inline-block';
+  el('organizerSection').style.display = 'block';
+  el('unlockOrganizerBtn').style.display = 'none';
+  return true;
+}
 
 function isDeadlinePassed(){
   if(!currentDeadline) return false;
@@ -1044,12 +1091,7 @@ el('renameTitleBtn').addEventListener('click', async () => {
     setStatus('請先輸入新的場次標題', true);
     return;
   }
-  const pin = prompt('請輸入主辦人密碼以更新場次標題：');
-  if(pin === null) return;
-  if(pin !== ORGANIZER_PIN){
-    alert('密碼錯誤，只有主辦人能設定場次名稱');
-    return;
-  }
+  if(!unlockOrganizer()) return;
   await applyTitleUpdate(val);
   setStatus('場次標題已更新！');
 });
@@ -1181,23 +1223,23 @@ async function openEventPanel(){
   }).join('');
   el('inpRenameTitle').value = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '';
   el('renameEventTag').textContent = EVENT_ID;
+  el('inpDeadlineInline').value = currentDeadline ? new Date(currentDeadline).toISOString().slice(0,10) : '';
   refreshPointerTag();
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 el('setCurrentBtn').addEventListener('click', async () => {
-  const pin = prompt('請輸入主辦人密碼以設定固定連結指向的場次：');
-  if(pin === null) return;
-  if(pin !== ORGANIZER_PIN){
-    alert('密碼錯誤，只有主辦人能設定這個');
-    return;
-  }
+  if(!unlockOrganizer()) return;
   await fetch(API_URL, {
     method: 'POST',
     body: JSON.stringify({ action: 'setCurrentEvent', event: EVENT_ID })
   });
   setStatus('已將固定連結指向這個場次！');
   refreshPointerTag();
+});
+
+el('unlockOrganizerBtn').addEventListener('click', () => {
+  unlockOrganizer();
 });
 
 el('toggleEventPanelBtn').addEventListener('click', () => {
@@ -1228,12 +1270,7 @@ el('createEventBtn').addEventListener('click', async () => {
     setStatus('請先填寫新場次的名稱', true);
     return;
   }
-  const pin = prompt('請輸入主辦人密碼以建立新場次：');
-  if(pin === null) return;
-  if(pin !== ORGANIZER_PIN){
-    alert('密碼錯誤，只有主辦人能建立新場次');
-    return;
-  }
+  if(!unlockOrganizer()) return;
   const slug = name.replace(/\s+/g, '-');
   const setAsCurrent = el('inpSetAsCurrent').checked;
   el('createEventBtn').disabled = true;
@@ -1348,33 +1385,31 @@ function renderDeadlineTag(){
 }
 
 el('editDeadlineBtn').addEventListener('click', async () => {
-  const pin = prompt('請輸入主辦人密碼以設定截止時間：');
-  if(pin === null) return;
-  if(pin !== ORGANIZER_PIN){
-    alert('密碼錯誤，只有主辦人能設定截止時間');
-    return;
-  }
-  const current = currentDeadline ? new Date(currentDeadline) : null;
-  const defaultVal = current ? current.toISOString().slice(0,10) : '';
-  const input = prompt('請輸入截止日期（格式：YYYY-MM-DD，例如 2026-08-10），登記會在當天 23:59 截止，留空可清除截止時間：', defaultVal);
-  if(input === null) return;
-  const trimmed = input.trim();
+  if(!unlockOrganizer()) return;
+  await openEventPanel();
+  el('inpDeadlineInline').focus();
+});
+
+el('saveDeadlineInlineBtn').addEventListener('click', async () => {
+  const trimmed = el('inpDeadlineInline').value.trim();
   if(!trimmed){
     currentDeadline = '';
     renderDeadlineTag();
     applyLockState();
     await saveDeadline('');
+    setStatus('已清除截止日期');
     return;
   }
   const parsed = new Date(`${trimmed}T23:59:59`);
   if(isNaN(parsed.getTime())){
-    alert('日期格式看起來不太對，請照範例格式輸入，例如 2026-08-10');
+    setStatus('日期格式看起來不太對', true);
     return;
   }
   currentDeadline = parsed.toISOString();
   renderDeadlineTag();
   applyLockState();
   await saveDeadline(currentDeadline);
+  setStatus('截止日期已更新！');
 });
 
 init();
