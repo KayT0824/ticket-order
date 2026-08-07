@@ -314,6 +314,33 @@
     font-family:'Inter',sans-serif;
   }
   .link-btn:hover{color:var(--gold-deep);}
+  .bg-preview-box{
+    margin-top:10px;
+    height:130px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background-color:#222430;
+    background-size:cover;
+    background-repeat:no-repeat;
+    cursor:grab;
+    touch-action:none;
+    user-select:none;
+    -webkit-user-select:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .bg-preview-box:active{cursor:grabbing;}
+  .bg-preview-box .bg-preview-hint{
+    color:rgba(255,255,255,0.55);
+    font-size:12px;
+    pointer-events:none;
+    text-align:center;
+    padding:0 16px;
+  }
+  .bg-preview-box.has-image .bg-preview-hint{display:none;}
   .no-price-tag{
     color:var(--ink-soft);
     font-style:italic;
@@ -567,26 +594,15 @@
             <input id="inpBgImage" type="text" placeholder="貼上圖片連結，例如 https://..." />
           </div>
         </div>
-        <div class="field-row" style="margin-top:10px;">
-          <div class="field" style="flex:1;">
-            <label>水平位置</label>
-            <select id="inpBgPosX">
-              <option value="left">靠左</option>
-              <option value="center" selected>置中</option>
-              <option value="right">靠右</option>
-            </select>
-          </div>
-          <div class="field" style="flex:1;">
-            <label>垂直位置</label>
-            <select id="inpBgPosY">
-              <option value="top">靠上</option>
-              <option value="center" selected>置中</option>
-              <option value="bottom">靠下</option>
-            </select>
-          </div>
+        <div class="hint" style="margin-top:8px;">貼上網址後，在下方預覽圖用滑鼠拖曳（手機用手指拖曳）調整位置，讓臉對齊在最適當的地方。</div>
+        <div id="bgPreviewBox" class="bg-preview-box">
+          <div class="bg-preview-hint">貼上圖片網址後可拖曳這裡調整位置</div>
+        </div>
+        <div style="text-align:right;margin-top:6px;">
+          <button class="link-btn" id="resetBgPosBtn">重設為置中</button>
         </div>
         <button class="submit-btn" id="saveBgImageBtn" style="margin-top:10px;">更新背景圖片</button>
-        <div class="hint">留空並送出可以清除背景圖片，恢復成預設深色底。圖片需要是可以直接開啟的圖片連結（結尾通常是 .jpg / .png / .webp）。位置設定可以避免人臉被裁到。</div>
+        <div class="hint">留空並送出可以清除背景圖片，恢復成預設深色底。圖片需要是可以直接開啟的圖片連結（結尾通常是 .jpg / .png / .webp）。</div>
       </div>
     </div>
   </div>
@@ -690,8 +706,8 @@ let volunteersCache = [];
 let isEventConfigured = false;
 let currentDeadline = '';
 let currentBgImage = '';
-let currentBgPosX = 'center';
-let currentBgPosY = 'center';
+let currentBgPosX = 50;
+let currentBgPosY = 50;
 let isOrganizerMode = false;
 
 function unlockOrganizer(){
@@ -992,17 +1008,26 @@ async function saveDeadline(iso){
   await db.ref(`eventsIndex/${EVENT_ID}/deadline`).set(iso || '');
 }
 
+function posToPercent(val, isY){
+  if(val === undefined || val === null || val === ''){ return 50; }
+  if(typeof val === 'number'){ return val; }
+  const map = isY ? {top:0, center:50, bottom:100} : {left:0, center:50, right:100};
+  if(Object.prototype.hasOwnProperty.call(map, val)){ return map[val]; }
+  const num = parseFloat(val);
+  return isNaN(num) ? 50 : num;
+}
+
 async function saveBgImage(url, posX, posY){
   await db.ref(`eventsIndex/${EVENT_ID}/bgImage`).set(url || '');
-  await db.ref(`eventsIndex/${EVENT_ID}/bgPosX`).set(posX || 'center');
-  await db.ref(`eventsIndex/${EVENT_ID}/bgPosY`).set(posY || 'center');
+  await db.ref(`eventsIndex/${EVENT_ID}/bgPosX`).set(posX === undefined ? 50 : posX);
+  await db.ref(`eventsIndex/${EVENT_ID}/bgPosY`).set(posY === undefined ? 50 : posY);
 }
 
 function applyStubBackground(url, posX, posY){
   const stubEl = el('stubEl');
   if(url){
     const safeUrl = url.replace(/'/g, '%27');
-    const position = `${posX || 'center'} ${posY || 'center'}`;
+    const position = `${posX === undefined ? 50 : posX}% ${posY === undefined ? 50 : posY}%`;
     stubEl.style.background = `linear-gradient(rgba(27,36,48,0.55), rgba(27,36,48,0.78)), url('${safeUrl}') ${position}/cover no-repeat`;
   }else{
     stubEl.style.background = '';
@@ -1076,8 +1101,8 @@ function attachListeners(eventId){
     }
     currentDeadline = data.deadline || '';
     currentBgImage = data.bgImage || '';
-    currentBgPosX = data.bgPosX || 'center';
-    currentBgPosY = data.bgPosY || 'center';
+    currentBgPosX = posToPercent(data.bgPosX, false);
+    currentBgPosY = posToPercent(data.bgPosY, true);
     renderDeadlineTag();
     applyLockState();
     applyStubBackground(currentBgImage, currentBgPosX, currentBgPosY);
@@ -1256,8 +1281,9 @@ async function openEventPanel(){
   el('renameEventTag').textContent = EVENT_ID;
   el('inpDeadlineInline').value = currentDeadline ? new Date(currentDeadline).toISOString().slice(0,10) : '';
   el('inpBgImage').value = currentBgImage;
-  el('inpBgPosX').value = currentBgPosX;
-  el('inpBgPosY').value = currentBgPosY;
+  bgPreviewPosX = currentBgPosX;
+  bgPreviewPosY = currentBgPosY;
+  updateBgPreview();
   refreshPointerTag();
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1345,11 +1371,64 @@ el('saveDeadlineInlineBtn').addEventListener('click', async () => {
   setStatus('截止日期已更新！');
 });
 
+let bgPreviewPosX = 50;
+let bgPreviewPosY = 50;
+let isDraggingBg = false;
+let bgDragStart = null;
+
+function updateBgPreview(){
+  const box = el('bgPreviewBox');
+  const url = el('inpBgImage').value.trim();
+  if(url){
+    const safeUrl = url.replace(/'/g, '%27');
+    box.style.backgroundImage = `url('${safeUrl}')`;
+    box.style.backgroundPosition = `${bgPreviewPosX}% ${bgPreviewPosY}%`;
+    box.classList.add('has-image');
+  }else{
+    box.style.backgroundImage = '';
+    box.classList.remove('has-image');
+  }
+}
+
+function clampPercent(v){
+  return Math.max(0, Math.min(100, v));
+}
+
+const bgPreviewBox = el('bgPreviewBox');
+
+bgPreviewBox.addEventListener('pointerdown', (e) => {
+  if(!el('inpBgImage').value.trim()) return;
+  isDraggingBg = true;
+  bgDragStart = { x: e.clientX, y: e.clientY, posX: bgPreviewPosX, posY: bgPreviewPosY };
+  e.preventDefault();
+});
+
+window.addEventListener('pointermove', (e) => {
+  if(!isDraggingBg || !bgDragStart) return;
+  const rect = bgPreviewBox.getBoundingClientRect();
+  const dxPercent = ((e.clientX - bgDragStart.x) / rect.width) * 100;
+  const dyPercent = ((e.clientY - bgDragStart.y) / rect.height) * 100;
+  bgPreviewPosX = clampPercent(bgDragStart.posX - dxPercent);
+  bgPreviewPosY = clampPercent(bgDragStart.posY - dyPercent);
+  updateBgPreview();
+});
+
+window.addEventListener('pointerup', () => {
+  isDraggingBg = false;
+  bgDragStart = null;
+});
+
+el('inpBgImage').addEventListener('input', updateBgPreview);
+
+el('resetBgPosBtn').addEventListener('click', () => {
+  bgPreviewPosX = 50;
+  bgPreviewPosY = 50;
+  updateBgPreview();
+});
+
 el('saveBgImageBtn').addEventListener('click', async () => {
   const url = el('inpBgImage').value.trim();
-  const posX = el('inpBgPosX').value;
-  const posY = el('inpBgPosY').value;
-  await saveBgImage(url, posX, posY);
+  await saveBgImage(url, bgPreviewPosX, bgPreviewPosY);
   setStatus(url ? '背景圖片已更新！' : '已清除背景圖片');
 });
 
