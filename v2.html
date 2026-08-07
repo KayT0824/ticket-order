@@ -300,6 +300,14 @@
     cursor:pointer;
   }
   .export-btn:hover{border-color:var(--gold-deep);color:var(--gold-deep);}
+  .full-title-display{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:16px;
+    color:var(--ink);
+    line-height:1.4;
+    word-break:break-word;
+  }
   .link-btn{
     background:none;
     border:none;
@@ -518,11 +526,12 @@
   </div>
 
   <div class="card event-panel" id="eventPanelWrap">
-    <div class="card-header-row" style="margin-bottom:10px;">
+    <div class="card-header-row" style="margin-bottom:6px;">
       <h2 style="font-size:13px;">📅 場次</h2>
       <button class="export-btn" id="toggleEventPanelBtn">切換場次</button>
     </div>
-    <div id="eventPanelBody" style="display:none;">
+    <div class="full-title-display" id="fullTitleDisplay">尚未設定場次標題</div>
+    <div id="eventPanelBody" style="display:none;margin-top:10px;">
       <div class="field">
         <label>切換到現有場次</label>
         <select id="eventSwitcher">
@@ -1115,10 +1124,12 @@ function attachListeners(eventId){
       titleDisplay.textContent = title;
       titleDisplay.dataset.raw = 'text';
       isEventConfigured = true;
+      el('fullTitleDisplay').textContent = title;
     }else{
       titleDisplay.textContent = '尚未設定場次標題';
       titleDisplay.dataset.raw = 'placeholder';
       isEventConfigured = false;
+      el('fullTitleDisplay').textContent = '尚未設定場次標題';
     }
     currentDeadline = data.deadline || '';
     currentBgImage = data.bgImage || '';
