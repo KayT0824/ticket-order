@@ -43,6 +43,7 @@
   /* ---- Ticket stub header (signature element) ---- */
   .stub{
     display:flex;
+    flex-direction:column;
     background:var(--ink);
     background-size:cover;
     background-position:center;
@@ -51,6 +52,7 @@
     overflow:hidden;
     box-shadow:0 8px 24px rgba(27,36,48,0.18);
     position:relative;
+    min-height:190px;
   }
   .warn-banner{
     background:#FBEAE8;
@@ -88,9 +90,15 @@
     opacity:0.45;
     pointer-events:none;
   }
-  .stub-main{
+  .stub-bar{
+    display:flex;
+    align-items:stretch;
+    background:var(--ink);
+    margin-top:auto;
+  }
+  .stub-bar-main{
     flex:1;
-    padding:22px 20px;
+    padding:16px 20px;
     min-width:0;
   }
   .stub-eyebrow{
@@ -109,59 +117,13 @@
     line-height:1.3;
     word-break:break-word;
   }
-  .stub-title-input{
-    background:transparent;
-    border:none;
-    border-bottom:1px dashed rgba(255,255,255,0.35);
-    color:#fff;
-    font-family:'Space Grotesk',sans-serif;
-    font-weight:700;
-    font-size:22px;
-    width:100%;
-    padding:2px 0 4px;
-    outline:none;
-  }
-  .stub-title-input::placeholder{color:rgba(255,255,255,0.45);}
-  .stub-edit{
-    margin-top:10px;
-    background:none;
-    border:none;
-    color:rgba(255,255,255,0.55);
-    font-size:12px;
-    cursor:pointer;
-    padding:0;
-    font-family:'Inter',sans-serif;
-    text-decoration:underline;
-  }
-  .event-tag{
-    margin-top:8px;
-    font-family:'IBM Plex Mono',monospace;
-    font-size:10.5px;
-    color:rgba(232,162,61,0.75);
-    letter-spacing:0.03em;
-  }
-  .deadline-row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin-top:6px;
-    flex-wrap:wrap;
-  }
-  .deadline-tag{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11px;
-    color:rgba(255,255,255,0.65);
-  }
-  .deadline-tag.passed{
-    color:#F0938A;
-    font-weight:600;
-  }
-  .stub-divider{
+  .stub-bar-divider{
     width:0;
     border-left:2px dashed rgba(255,255,255,0.25);
     position:relative;
+    margin:12px 0;
   }
-  .stub-divider::before,.stub-divider::after{
+  .stub-bar-divider::before,.stub-bar-divider::after{
     content:'';
     position:absolute;
     left:-9px;
@@ -170,11 +132,11 @@
     border-radius:50%;
     background:var(--paper);
   }
-  .stub-divider::before{top:-9px;}
-  .stub-divider::after{bottom:-9px;}
+  .stub-bar-divider::before{top:-9px;}
+  .stub-bar-divider::after{bottom:-9px;}
   .stub-counter{
     width:132px;
-    padding:22px 16px;
+    padding:16px;
     display:flex;
     flex-direction:column;
     justify-content:center;
@@ -196,8 +158,42 @@
     margin-top:4px;
   }
 
+  /* ---- Deadline / event-code note (moved off the banner, plain area above the form) ---- */
+  .deadline-note{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+  }
+  .deadline-note .deadline-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .deadline-note .deadline-tag.passed{
+    color:var(--stamp);
+    font-weight:600;
+  }
+  .deadline-note .stub-edit{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:12px;
+    cursor:pointer;
+    padding:0;
+    font-family:'Inter',sans-serif;
+    text-decoration:underline;
+  }
+  .deadline-note .stub-edit:hover{color:var(--gold-deep);}
+  .deadline-note .event-tag-inline{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+
   @media (max-width:380px){
-    .stub-main{padding:16px 14px;}
+    .stub-bar-main{padding:14px 14px;}
     .stub-title{font-size:18px;}
     .stub-counter{width:104px;padding:16px 10px;}
     .counter-block .num{font-size:21px;}
@@ -503,24 +499,21 @@
   </div>
 
   <div class="stub" id="stubEl">
-    <div class="stub-main">
-      <div class="stub-eyebrow">團體購票登記</div>
-      <div id="titleDisplay" class="stub-title">尚未設定場次標題</div>
-      <div class="deadline-row">
-        <div class="deadline-tag" id="deadlineTag">尚未設定截止時間</div>
-        <button class="stub-edit" id="editDeadlineBtn" style="display:none;">設定截止時間🔒</button>
+    <div class="stub-bar">
+      <div class="stub-bar-main">
+        <div class="stub-eyebrow">團體購票登記</div>
+        <div id="titleDisplay" class="stub-title">尚未設定場次標題</div>
       </div>
-      <div class="event-tag" id="eventTag"></div>
-    </div>
-    <div class="stub-divider"></div>
-    <div class="stub-counter">
-      <div class="counter-block">
-        <div class="num" id="totalQtyNum">0</div>
-        <div class="lbl">總張數</div>
-      </div>
-      <div class="counter-block">
-        <div class="num" id="totalPeopleNum">0</div>
-        <div class="lbl">登記人數</div>
+      <div class="stub-bar-divider"></div>
+      <div class="stub-counter">
+        <div class="counter-block">
+          <div class="num" id="totalQtyNum">0</div>
+          <div class="lbl">總張數</div>
+        </div>
+        <div class="counter-block">
+          <div class="num" id="totalPeopleNum">0</div>
+          <div class="lbl">登記人數</div>
+        </div>
       </div>
     </div>
   </div>
@@ -621,6 +614,11 @@
   </div>
 
   <div class="card" id="registerCard">
+    <div class="deadline-note">
+      <span class="deadline-tag" id="deadlineTag">尚未設定截止時間</span>
+      <button class="stub-edit" id="editDeadlineBtn" style="display:none;">設定截止時間🔒</button>
+      <span class="event-tag-inline" id="eventTag" style="display:none;"></span>
+    </div>
     <h2>填寫我的登記</h2>
     <div class="field-row">
       <div class="field name">
@@ -721,6 +719,7 @@ function unlockOrganizer(){
   }
   isOrganizerMode = true;
   el('editDeadlineBtn').style.display = 'inline-block';
+  el('eventTag').style.display = 'inline-block';
   el('organizerSection').style.display = 'block';
   el('unlockOrganizerBtn').style.display = 'none';
   return true;
@@ -1029,7 +1028,7 @@ function applyStubBackground(url, posX, posY){
   if(url){
     const safeUrl = url.replace(/'/g, '%27');
     const position = `${posX === undefined ? 50 : posX}% ${posY === undefined ? 50 : posY}%`;
-    stubEl.style.background = `linear-gradient(rgba(27,36,48,0.55), rgba(27,36,48,0.78)), url('${safeUrl}') ${position}/cover no-repeat`;
+    stubEl.style.background = `linear-gradient(to bottom, rgba(27,36,48,0) 65%, rgba(27,36,48,0.4) 100%), url('${safeUrl}') ${position}/cover no-repeat`;
   }else{
     stubEl.style.background = '';
   }
