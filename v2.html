@@ -44,6 +44,9 @@
   .stub{
     display:flex;
     background:var(--ink);
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
     border-radius:14px;
     overflow:hidden;
     box-shadow:0 8px 24px rgba(27,36,48,0.18);
@@ -472,7 +475,7 @@
     <button class="warn-btn" id="warnSwitchBtn">切換到正確場次</button>
   </div>
 
-  <div class="stub">
+  <div class="stub" id="stubEl">
     <div class="stub-main">
       <div class="stub-eyebrow">團體購票登記</div>
       <div id="titleDisplay" class="stub-title">尚未設定場次標題</div>
@@ -555,6 +558,17 @@
         </div>
         <button class="submit-btn" id="saveDeadlineInlineBtn" style="margin-top:10px;">更新截止日期</button>
         <div class="hint">留空並送出可以清除截止日期。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>票根背景圖片網址</label>
+            <input id="inpBgImage" type="text" placeholder="貼上圖片連結，例如 https://..." />
+          </div>
+        </div>
+        <button class="submit-btn" id="saveBgImageBtn" style="margin-top:10px;">更新背景圖片</button>
+        <div class="hint">留空並送出可以清除背景圖片，恢復成預設深色底。圖片需要是可以直接開啟的圖片連結（結尾通常是 .jpg / .png / .webp）。</div>
       </div>
     </div>
   </div>
@@ -657,6 +671,7 @@ let ordersCache = [];
 let volunteersCache = [];
 let isEventConfigured = false;
 let currentDeadline = '';
+let currentBgImage = '';
 let isOrganizerMode = false;
 
 function unlockOrganizer(){
@@ -957,6 +972,20 @@ async function saveDeadline(iso){
   await db.ref(`eventsIndex/${EVENT_ID}/deadline`).set(iso || '');
 }
 
+async function saveBgImage(url){
+  await db.ref(`eventsIndex/${EVENT_ID}/bgImage`).set(url || '');
+}
+
+function applyStubBackground(url){
+  const stubEl = el('stubEl');
+  if(url){
+    const safeUrl = url.replace(/'/g, '%27');
+    stubEl.style.background = `linear-gradient(rgba(27,36,48,0.55), rgba(27,36,48,0.78)), url('${safeUrl}') center/cover no-repeat`;
+  }else{
+    stubEl.style.background = '';
+  }
+}
+
 async function listEvents(){
   const snap = await db.ref('eventsIndex').once('value');
   const val = snap.val() || {};
@@ -1023,8 +1052,10 @@ function attachListeners(eventId){
       isEventConfigured = false;
     }
     currentDeadline = data.deadline || '';
+    currentBgImage = data.bgImage || '';
     renderDeadlineTag();
     applyLockState();
+    applyStubBackground(currentBgImage);
   });
 }
 
@@ -1199,6 +1230,7 @@ async function openEventPanel(){
   el('inpRenameTitle').value = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '';
   el('renameEventTag').textContent = EVENT_ID;
   el('inpDeadlineInline').value = currentDeadline ? new Date(currentDeadline).toISOString().slice(0,10) : '';
+  el('inpBgImage').value = currentBgImage;
   refreshPointerTag();
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1284,6 +1316,12 @@ el('saveDeadlineInlineBtn').addEventListener('click', async () => {
   }
   await saveDeadline(parsed.toISOString());
   setStatus('截止日期已更新！');
+});
+
+el('saveBgImageBtn').addEventListener('click', async () => {
+  const url = el('inpBgImage').value.trim();
+  await saveBgImage(url);
+  setStatus(url ? '背景圖片已更新！' : '已清除背景圖片');
 });
 
 // ---- 場次切換（不整頁重載） ----
