@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>購票登記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF1F6;
+    --card:#FFFFFF;
+    --ink:#1B2430;
+    --ink-soft:#5B6472;
+    --gold:#E8A23D;
+    --gold-deep:#C97F1F;
+    --stamp:#C1443C;
+    --line:#C9CDD3;
+    --line-soft:#DEE1E6;
+  }
+  *{box-sizing:border-box;}
+  html{
+    overflow-x:hidden;
+    width:100%;
+  }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    width:100%;
+  }
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:20px 16px 60px;
+  }
+
+  /* ---- Ticket stub header (signature element) ---- */
+  .stub{
+    display:flex;
+    background:var(--ink);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 8px 24px rgba(27,36,48,0.18);
+    position:relative;
+  }
+  .warn-banner{
+    background:#FBEAE8;
+    border:1px solid #F0BDB8;
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .warn-text{
+    color:var(--stamp);
+    font-size:13.5px;
+    font-weight:600;
+    flex:1;
+    min-width:200px;
+  }
+  .warn-btn{
+    background:var(--stamp);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:9px 14px;
+    font-size:13px;
+    font-weight:600;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .warn-btn:hover{background:#A6392F;}
+  .form-locked{
+    opacity:0.45;
+    pointer-events:none;
+  }
+  .stub-main{
+    flex:1;
+    padding:22px 20px;
+    min-width:0;
+  }
+  .stub-eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    color:var(--gold);
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .stub-title{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:22px;
+    color:#fff;
+    line-height:1.3;
+    word-break:break-word;
+  }
+  .stub-title-input{
+    background:transparent;
+    border:none;
+    border-bottom:1px dashed rgba(255,255,255,0.35);
+    color:#fff;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:22px;
+    width:100%;
+    padding:2px 0 4px;
+    outline:none;
+  }
+  .stub-title-input::placeholder{color:rgba(255,255,255,0.45);}
+  .stub-edit{
+    margin-top:10px;
+    background:none;
+    border:none;
+    color:rgba(255,255,255,0.55);
+    font-size:12px;
+    cursor:pointer;
+    padding:0;
+    font-family:'Inter',sans-serif;
+    text-decoration:underline;
+  }
+  .event-tag{
+    margin-top:8px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:rgba(232,162,61,0.75);
+    letter-spacing:0.03em;
+  }
+  .deadline-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:6px;
+    flex-wrap:wrap;
+  }
+  .deadline-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:rgba(255,255,255,0.65);
+  }
+  .deadline-tag.passed{
+    color:#F0938A;
+    font-weight:600;
+  }
+  .stub-divider{
+    width:0;
+    border-left:2px dashed rgba(255,255,255,0.25);
+    position:relative;
+  }
+  .stub-divider::before,.stub-divider::after{
+    content:'';
+    position:absolute;
+    left:-9px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--paper);
+  }
+  .stub-divider::before{top:-9px;}
+  .stub-divider::after{bottom:-9px;}
+  .stub-counter{
+    width:132px;
+    padding:22px 16px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    gap:10px;
+  }
+  .counter-block .num{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:26px;
+    color:var(--gold);
+    line-height:1;
+  }
+  .counter-block .lbl{
+    font-size:10px;
+    color:rgba(255,255,255,0.55);
+    letter-spacing:0.08em;
+    margin-top:4px;
+  }
+
+  @media (max-width:380px){
+    .stub-main{padding:16px 14px;}
+    .stub-title{font-size:18px;}
+    .stub-counter{width:104px;padding:16px 10px;}
+    .counter-block .num{font-size:21px;}
+  }
+
+  /* ---- Form card ---- */
+  .card{
+    background:var(--card);
+    border-radius:14px;
+    padding:20px;
+    margin-top:16px;
+    box-shadow:0 1px 3px rgba(27,36,48,0.06);
+    border:1px solid var(--line-soft);
+  }
+  .card h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15px;
+    margin:0 0 14px;
+    color:var(--ink);
+  }
+  .field-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:0;
+  }
+  .field label{
+    font-size:12px;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .field input{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:15px;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    outline:none;
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+  }
+  .field input:focus{border-color:var(--gold-deep);}
+  .field select{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:15px;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    outline:none;
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    max-width:100%;
+    background:#fff;
+  }
+  .field.name{flex:1.4;}
+  .field.qty{flex:1;}
+  .field.price{flex:1.3;}
+  @media (max-width:480px){
+    .field-row{
+      flex-direction:column;
+    }
+    .field.name, .field.qty, .field.price{
+      flex:1 1 auto;
+      width:100%;
+    }
+  }
+  .price-check{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    color:var(--ink-soft);
+    font-weight:500;
+    cursor:pointer;
+  }
+  .price-check input{width:auto;}
+  .field input:disabled{background:#F2F3F5;color:var(--ink-soft);cursor:not-allowed;}
+  .card-header-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  .card-header-row h2{margin:0;}
+  .export-btn{
+    background:none;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:7px 12px;
+    font-size:12.5px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .export-btn:hover{border-color:var(--gold-deep);color:var(--gold-deep);}
+  .link-btn{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:12px;
+    cursor:pointer;
+    padding:4px 0;
+    text-decoration:underline;
+    font-family:'Inter',sans-serif;
+  }
+  .link-btn:hover{color:var(--gold-deep);}
+  .no-price-tag{
+    color:var(--ink-soft);
+    font-style:italic;
+    font-family:'Inter',sans-serif;
+  }
+  .volunteer-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;
+  }
+  .volunteer-chip{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:#FBF0DC;
+    border:1px solid #EFD9AC;
+    color:var(--gold-deep);
+    border-radius:999px;
+    padding:6px 10px 6px 14px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .volunteer-chip button{
+    background:none;
+    border:none;
+    color:var(--gold-deep);
+    cursor:pointer;
+    font-size:13px;
+    padding:0 2px;
+    line-height:1;
+    opacity:0.6;
+  }
+  .volunteer-chip button:hover{opacity:1;}
+  .volunteer-empty{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+  .submit-btn{
+    margin-top:14px;
+    width:100%;
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:12px;
+    font-size:15px;
+    font-weight:600;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+    transition:background 0.15s ease;
+  }
+  .submit-btn:hover{background:#2B3646;}
+  .submit-btn:disabled{opacity:0.5;cursor:default;}
+  .hint{font-size:12px;color:var(--ink-soft);margin-top:8px;}
+
+  /* ---- Table ---- */
+  .list-card{margin-top:16px;}
+  .table-scroll{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    margin:0 -20px;
+    padding:0 20px;
+  }
+  table{width:100%;min-width:520px;border-collapse:collapse;}
+  thead th{
+    text-align:left;
+    font-size:11px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    padding:0 8px 10px;
+    border-bottom:1px solid var(--line-soft);
+    font-weight:600;
+  }
+  thead th.num-col{text-align:right;}
+  tbody td{
+    padding:12px 8px;
+    border-bottom:1px solid var(--line-soft);
+    font-size:14.5px;
+  }
+  tbody td.num-col{text-align:right;font-family:'IBM Plex Mono',monospace;}
+  tbody tr:last-child td{border-bottom:none;}
+  .name-cell{font-weight:600;}
+  .del-btn{
+    background:none;border:none;color:var(--ink-soft);
+    cursor:pointer;font-size:13px;padding:4px 6px;border-radius:6px;
+  }
+  .del-btn:hover{color:var(--stamp);background:#FBEAE8;}
+  .edit-btn{
+    background:none;border:none;color:var(--gold-deep);
+    cursor:pointer;font-size:13px;padding:4px 6px;border-radius:6px;
+  }
+  .edit-btn:hover{background:#FBF0DC;}
+  .rank-cell{width:1%;white-space:nowrap;}
+  .rank-controls{
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .rank-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:13px;
+    color:var(--ink-soft);
+    min-width:16px;
+    text-align:center;
+  }
+  .move-btn{
+    background:none;
+    border:1px solid var(--line-soft);
+    border-radius:5px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-size:10px;
+    line-height:1;
+    padding:4px 5px;
+  }
+  .move-btn:hover:not(:disabled){border-color:var(--gold-deep);color:var(--gold-deep);}
+  .move-btn:disabled{opacity:0.25;cursor:default;}
+  .empty-state{
+    text-align:center;
+    padding:36px 16px;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+  .totals{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#F7F1E4;
+    border-radius:10px;
+    padding:14px 16px;
+    margin-top:14px;
+  }
+  .totals .t-item{text-align:center;flex:1;}
+  .totals .t-item .v{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:18px;
+    color:var(--gold-deep);
+  }
+  .totals .t-item .l{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .status{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+  .status.err{color:var(--stamp);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="warn-banner" id="warnBanner" style="display:none;">
+    <div class="warn-text">⚠️ 這個連結還沒有設定正式場次，請先確認你拿到的是不是正確的活動連結</div>
+    <button class="warn-btn" id="warnSwitchBtn">切換到正確場次</button>
+  </div>
+
+  <div class="stub">
+    <div class="stub-main">
+      <div class="stub-eyebrow">團體購票登記</div>
+      <div id="titleDisplay" class="stub-title">尚未設定場次標題</div>
+      <div class="deadline-row">
+        <div class="deadline-tag" id="deadlineTag">尚未設定截止時間</div>
+        <button class="stub-edit" id="editDeadlineBtn" style="display:none;">設定截止時間🔒</button>
+      </div>
+      <div class="event-tag" id="eventTag"></div>
+    </div>
+    <div class="stub-divider"></div>
+    <div class="stub-counter">
+      <div class="counter-block">
+        <div class="num" id="totalQtyNum">0</div>
+        <div class="lbl">總張數</div>
+      </div>
+      <div class="counter-block">
+        <div class="num" id="totalPeopleNum">0</div>
+        <div class="lbl">登記人數</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card event-panel" id="eventPanelWrap">
+    <div class="card-header-row" style="margin-bottom:10px;">
+      <h2 style="font-size:13px;">📅 場次</h2>
+      <button class="export-btn" id="toggleEventPanelBtn">切換場次</button>
+    </div>
+    <div id="eventPanelBody" style="display:none;">
+      <div class="field">
+        <label>切換到現有場次</label>
+        <select id="eventSwitcher">
+          <option value="">請選擇場次…</option>
+        </select>
+      </div>
+
+      <div style="text-align:right;margin-top:10px;">
+        <button class="link-btn" id="unlockOrganizerBtn">🔧 主辦人功能</button>
+      </div>
+
+      <div id="organizerSection" style="display:none;">
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>建立新場次(輸入名稱)</label>
+            <input id="inpNewEvent" type="text" placeholder="例如 0801演唱會" />
+          </div>
+        </div>
+        <button class="submit-btn" id="createEventBtn" style="margin-top:10px;">建立並前往新場次</button>
+        <label class="price-check" style="margin-top:8px;">
+          <input type="checkbox" id="inpSetAsCurrent" checked />
+          同時把固定連結指向這個新場次（建議勾選）
+        </label>
+        <div class="hint">建立後會自動產生新連結並切換過去，之後把新連結分享出去即可，舊場次資料不會受影響。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>重新命名「目前這個場次」的標題</label>
+            <input id="inpRenameTitle" type="text" placeholder="輸入新的場次標題" />
+          </div>
+        </div>
+        <button class="submit-btn" id="renameTitleBtn" style="margin-top:10px;background:var(--gold-deep);">更新目前場次標題</button>
+        <div class="hint">只會更改你現在瀏覽的這個場次（場次代碼:<span id="renameEventTag"></span>），不會建立新連結。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="hint" style="margin-bottom:8px;">🔗 固定連結（不帶場次代碼的那個網址）目前指向:<strong id="currentPointerTag">讀取中…</strong></div>
+        <button class="submit-btn" id="setCurrentBtn" style="background:var(--stamp);">把固定連結指向「目前這個場次」</button>
+        <div class="hint">設定後，任何人打開不帶場次代碼的固定連結（例如放在共用夾裡的那個），都會自動看到這個場次，不用更換分享出去的連結。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>設定截止日期</label>
+            <input id="inpDeadlineInline" type="date" />
+          </div>
+        </div>
+        <button class="submit-btn" id="saveDeadlineInlineBtn" style="margin-top:10px;">更新截止日期</button>
+        <div class="hint">留空並送出可以清除截止日期。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="registerCard">
+    <h2>填寫我的登記</h2>
+    <div class="field-row">
+      <div class="field name">
+        <label>姓名</label>
+        <input id="inpName" type="text" placeholder="你的名字" />
+      </div>
+      <div class="field qty">
+        <label>張數</label>
+        <input id="inpQty" type="number" min="1" placeholder="2" />
+      </div>
+      <div class="field price">
+        <label>單張願付金額</label>
+        <input id="inpPrice" type="number" min="0" placeholder="1500" />
+        <label class="price-check">
+          <input type="checkbox" id="inpNoPrice" />
+          不限金額，有票就好
+        </label>
+      </div>
+    </div>
+    <button class="submit-btn" id="submitBtn">送出 / 更新我的登記</button>
+    <div class="hint">同名會覆蓋成最新的登記內容，之後想改張數或金額直接重填送出即可。</div>
+    <div class="status" id="statusMsg"></div>
+  </div>
+
+  <div class="card" id="volunteerCard">
+    <h2>🙋 自願幫忙搶票</h2>
+    <div class="field-row">
+      <div class="field name" style="flex:1;">
+        <label>姓名</label>
+        <input id="inpVolunteer" type="text" placeholder="有空幫忙搶票就填這裡" />
+      </div>
+    </div>
+    <button class="submit-btn" id="volunteerBtn" style="background:var(--gold-deep);">我也要幫忙搶票</button>
+    <div id="volunteerList" class="volunteer-list"></div>
+  </div>
+
+  <div class="card list-card">
+    <div class="card-header-row">
+      <h2>大家的登記</h2>
+      <button class="export-btn" id="exportBtn">匯出 Excel</button>
+    </div>
+    <div id="tableWrap"><div class="empty-state">載入中…</div></div>
+    <div class="totals">
+      <div class="t-item">
+        <div class="v" id="sumQty">0</div>
+        <div class="l">總張數</div>
+      </div>
+      <div class="t-item">
+        <div class="v" id="sumAmount">$0</div>
+        <div class="l">總金額</div>
+      </div>
+      <div class="t-item">
+        <div class="v" id="sumPeople">0</div>
+        <div class="l">人數</div>
+      </div>
+    </div>
+    <div class="hint" id="unpricedNote" style="text-align:center;margin-top:6px;"></div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+// ---- Firebase 設定與初始化 ----
+const firebaseConfig = {
+  apiKey: "AIzaSyAg4Q2iDBwLEZrm3aAN_veP_CSdi0iN-Cg",
+  authDomain: "ticket-order.firebaseapp.com",
+  databaseURL: "https://ticket-order-default-rtdb.firebaseio.com",
+  projectId: "ticket-order",
+  storageBucket: "ticket-order.firebasestorage.app",
+  messagingSenderId: "804053169904",
+  appId: "1:804053169904:web:45f9583b309ed8216c3435"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ⚠️ 主辦人專用密碼，只用來保護管理功能，改成你自己想用的密碼即可
+const ORGANIZER_PIN = '0824';
+
+let EVENT_ID = new URLSearchParams(window.location.search).get('event') || 'default';
+
+function sanitizeKey(str){
+  return encodeURIComponent(str).replace(/\./g, '%2E');
+}
+
+function buildEventUrl(eventId){
+  const url = new URL(window.location.href);
+  url.searchParams.set('event', eventId);
+  return url.toString();
+}
+
+const el = (id) => document.getElementById(id);
+let ordersCache = [];
+let volunteersCache = [];
+let isEventConfigured = false;
+let currentDeadline = '';
+let isOrganizerMode = false;
+
+function unlockOrganizer(){
+  if(isOrganizerMode) return true;
+  const pin = prompt('請輸入主辦人密碼：');
+  if(pin === null) return false;
+  if(pin !== ORGANIZER_PIN){
+    alert('密碼錯誤');
+    return false;
+  }
+  isOrganizerMode = true;
+  el('editDeadlineBtn').style.display = 'inline-block';
+  el('organizerSection').style.display = 'block';
+  el('unlockOrganizerBtn').style.display = 'none';
+  return true;
+}
+
+function isDeadlinePassed(){
+  if(!currentDeadline) return false;
+  return Date.now() > new Date(currentDeadline).getTime();
+}
+
+function applyLockState(){
+  const banner = el('warnBanner');
+  const bannerText = banner.querySelector('.warn-text');
+  const warnBtn = el('warnSwitchBtn');
+  const registerCard = el('registerCard');
+  const volunteerCard = el('volunteerCard');
+
+  const deadlinePassed = isDeadlinePassed();
+  const locked = !isEventConfigured || deadlinePassed;
+
+  if(!locked){
+    banner.style.display = 'none';
+    registerCard.classList.remove('form-locked');
+    volunteerCard.classList.remove('form-locked');
+    return;
+  }
+
+  banner.style.display = 'flex';
+  registerCard.classList.add('form-locked');
+  volunteerCard.classList.add('form-locked');
+
+  if(!isEventConfigured){
+    bannerText.textContent = '⚠️ 這個連結還沒有設定正式場次，請先確認你拿到的是不是正確的活動連結';
+    warnBtn.style.display = 'inline-block';
+  }else if(deadlinePassed){
+    const d = new Date(currentDeadline);
+    bannerText.textContent = `⏰ 這場登記已於 ${d.toLocaleDateString('zh-TW')} 截止，無法再填寫或修改`;
+    warnBtn.style.display = 'none';
+  }
+}
+
+function renderDeadlineTag(){
+  const tag = el('deadlineTag');
+  if(!currentDeadline){
+    tag.textContent = '尚未設定截止時間';
+    tag.classList.remove('passed');
+    return;
+  }
+  const d = new Date(currentDeadline);
+  const label = `登記截止:${d.toLocaleDateString('zh-TW')}`;
+  if(isDeadlinePassed()){
+    tag.textContent = `${label}（已截止）`;
+    tag.classList.add('passed');
+  }else{
+    tag.textContent = label;
+    tag.classList.remove('passed');
+  }
+}
+
+function fmtMoney(n){
+  return '$' + Number(n).toLocaleString();
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function setStatus(msg, isErr){
+  const statusMsg = el('statusMsg');
+  statusMsg.textContent = msg || '';
+  statusMsg.className = 'status' + (isErr ? ' err' : '');
+}
+
+// ---- 大家的登記 ----
+
+function renderTable(list){
+  const tableWrap = el('tableWrap');
+  if(!list.length){
+    tableWrap.innerHTML = '<div class="empty-state">還沒有人登記，第一個填寫上面的表單吧</div>';
+    return;
+  }
+  let rows = list.map((o, idx) => {
+    const hasPrice = o.price !== null && o.price !== undefined;
+    const priceCell = hasPrice ? fmtMoney(o.price) : '<span class="no-price-tag">不限金額</span>';
+    const subtotalCell = hasPrice ? fmtMoney(o.qty * o.price) : '<span class="no-price-tag">—</span>';
+    const isFirst = idx === 0;
+    const isLast = idx === list.length - 1;
+    return `<tr>
+      <td class="rank-cell">
+        <div class="rank-controls">
+          <button class="move-btn" data-idx="${idx}" data-dir="up" ${isFirst ? 'disabled' : ''}>▲</button>
+          <span class="rank-num">${idx + 1}</span>
+          <button class="move-btn" data-idx="${idx}" data-dir="down" ${isLast ? 'disabled' : ''}>▼</button>
+        </div>
+      </td>
+      <td class="name-cell">${escapeHtml(o.name)}</td>
+      <td class="num-col">${o.qty}</td>
+      <td class="num-col">${priceCell}</td>
+      <td class="num-col">${subtotalCell}</td>
+      <td style="text-align:right;white-space:nowrap;">
+        <button class="edit-btn" data-name="${escapeHtml(o.name)}">編輯</button>
+        <button class="del-btn" data-name="${escapeHtml(o.name)}">刪除</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tableWrap.innerHTML = `<div class="table-scroll"><table>
+    <thead>
+      <tr>
+        <th>順序</th>
+        <th>姓名</th>
+        <th class="num-col">張數</th>
+        <th class="num-col">單張金額</th>
+        <th class="num-col">小計</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+
+  tableWrap.querySelectorAll('.move-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.disabled) return;
+      const idx = parseInt(btn.getAttribute('data-idx'), 10);
+      const dir = btn.getAttribute('data-dir');
+      const name = list[idx].name;
+      moveOrderAPI(name, dir).catch(() => {
+        setStatus('順序更新失敗，請重新整理', true);
+      });
+    });
+  });
+
+  tableWrap.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.getAttribute('data-name');
+      const entry = list.find(o => o.name === name);
+      if(!entry) return;
+
+      el('inpName').value = entry.name;
+      el('inpQty').value = entry.qty;
+      const hasPrice = entry.price !== null && entry.price !== undefined;
+      noPriceCheck.checked = !hasPrice;
+      priceInput.disabled = !hasPrice;
+      priceInput.value = hasPrice ? entry.price : '';
+
+      setStatus(`正在編輯「${name}」的登記，改完按下方送出即可更新`, false);
+      el('inpName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el('inpQty').focus();
+    });
+  });
+
+  tableWrap.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.disabled) return;
+      if(btn.dataset.confirm === '1'){
+        const name = btn.getAttribute('data-name');
+        deleteOrderAPI(name).catch(() => {
+          setStatus('刪除失敗，請重新整理', true);
+        });
+        return;
+      }
+      btn.dataset.confirm = '1';
+      btn.textContent = '確定刪除?';
+      btn.style.color = 'var(--stamp)';
+      btn.style.fontWeight = '700';
+      setTimeout(() => {
+        if(btn.isConnected && btn.dataset.confirm === '1'){
+          btn.dataset.confirm = '0';
+          btn.textContent = '刪除';
+          btn.style.color = '';
+          btn.style.fontWeight = '';
+        }
+      }, 2500);
+    });
+  });
+}
+
+function updateTotals(list){
+  const totalQty = list.reduce((s,o) => s + o.qty, 0);
+  const pricedEntries = list.filter(o => o.price !== null && o.price !== undefined);
+  const totalAmount = pricedEntries.reduce((s,o) => s + o.qty * o.price, 0);
+  const unpricedCount = list.length - pricedEntries.length;
+  const totalPeople = list.length;
+
+  el('totalQtyNum').textContent = totalQty;
+  el('totalPeopleNum').textContent = totalPeople;
+  el('sumQty').textContent = totalQty;
+  el('sumAmount').textContent = fmtMoney(totalAmount);
+  el('sumPeople').textContent = totalPeople;
+
+  const noteEl = el('unpricedNote');
+  noteEl.textContent = unpricedCount ? `金額總計不含 ${unpricedCount} 位「不限金額」的登記` : '';
+}
+
+// ---- 志工 ----
+
+function renderVolunteers(list){
+  const wrap = el('volunteerList');
+  if(!list.length){
+    wrap.innerHTML = '<div class="volunteer-empty">目前還沒有人自願幫忙搶票</div>';
+    return;
+  }
+  const sorted = [...list].sort((a,b) => a.ts - b.ts);
+  wrap.innerHTML = sorted.map(v => `
+    <div class="volunteer-chip">
+      ${escapeHtml(v.name)}
+      <button data-name="${escapeHtml(v.name)}" title="移除">✕</button>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.disabled) return;
+      const name = btn.getAttribute('data-name');
+      removeVolunteerAPI(name).catch(() => {
+        setStatus('移除志工失敗，請再試一次', true);
+      });
+    });
+  });
+}
+
+// ---- Firebase 讀寫 ----
+
+async function resolveEventId(){
+  const snap = await db.ref('meta/currentEvent').once('value');
+  const mapped = snap.val();
+  return mapped || 'default';
+}
+
+function ensureEventRegistered(eventId){
+  const ref = db.ref(`eventsIndex/${eventId}`);
+  ref.once('value').then(snap => {
+    if(!snap.exists()){
+      ref.set({ title: '', deadline: '' });
+    }
+  });
+}
+
+async function upsertOrderAPI(entry){
+  const key = sanitizeKey(entry.name);
+  await db.ref(`events/${EVENT_ID}/orders/${key}`).set({
+    name: entry.name,
+    qty: entry.qty,
+    price: (entry.price === null || entry.price === undefined) ? null : entry.price,
+    order: entry.order,
+    ts: entry.ts || Date.now()
+  });
+}
+
+async function deleteOrderAPI(name){
+  await db.ref(`events/${EVENT_ID}/orders/${sanitizeKey(name)}`).remove();
+}
+
+async function moveOrderAPI(name, direction){
+  const idx = ordersCache.findIndex(o => o.name === name);
+  if(idx === -1) return;
+  const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if(targetIdx < 0 || targetIdx >= ordersCache.length) return;
+  const a = ordersCache[idx];
+  const b = ordersCache[targetIdx];
+  const updates = {};
+  updates[`events/${EVENT_ID}/orders/${sanitizeKey(a.name)}/order`] = b.order;
+  updates[`events/${EVENT_ID}/orders/${sanitizeKey(b.name)}/order`] = a.order;
+  await db.ref().update(updates);
+}
+
+async function addVolunteerAPI(entry){
+  const key = sanitizeKey(entry.name);
+  const ref = db.ref(`events/${EVENT_ID}/volunteers/${key}`);
+  const snap = await ref.once('value');
+  if(snap.exists()) return;
+  await ref.set(entry);
+}
+
+async function removeVolunteerAPI(name){
+  await db.ref(`events/${EVENT_ID}/volunteers/${sanitizeKey(name)}`).remove();
+}
+
+async function saveTitle(val){
+  await db.ref(`eventsIndex/${EVENT_ID}/title`).set(val);
+}
+
+async function saveDeadline(iso){
+  await db.ref(`eventsIndex/${EVENT_ID}/deadline`).set(iso || '');
+}
+
+async function listEvents(){
+  const snap = await db.ref('eventsIndex').once('value');
+  const val = snap.val() || {};
+  return Object.keys(val).map(k => ({
+    event: k,
+    title: (val[k] && val[k].title) || '',
+    deadline: (val[k] && val[k].deadline) || ''
+  }));
+}
+
+async function loadCurrentEventInfo(){
+  const snap = await db.ref('meta/currentEvent').once('value');
+  return snap.val() || '';
+}
+
+async function setCurrentEventPointer(eventId){
+  await db.ref('meta/currentEvent').set(eventId);
+}
+
+// ---- 即時監聽（有人異動資料，畫面自動更新） ----
+
+let ordersListenerRef = null;
+let volunteersListenerRef = null;
+let indexListenerRef = null;
+
+function detachListeners(){
+  if(ordersListenerRef) ordersListenerRef.off();
+  if(volunteersListenerRef) volunteersListenerRef.off();
+  if(indexListenerRef) indexListenerRef.off();
+}
+
+function attachListeners(eventId){
+  detachListeners();
+
+  ordersListenerRef = db.ref(`events/${eventId}/orders`);
+  ordersListenerRef.on('value', snap => {
+    const val = snap.val() || {};
+    const list = Object.keys(val).map(k => val[k]);
+    list.sort((a,b) => (a.order || 0) - (b.order || 0));
+    ordersCache = list;
+    renderTable(list);
+    updateTotals(list);
+  });
+
+  volunteersListenerRef = db.ref(`events/${eventId}/volunteers`);
+  volunteersListenerRef.on('value', snap => {
+    const val = snap.val() || {};
+    const list = Object.keys(val).map(k => val[k]);
+    volunteersCache = list;
+    renderVolunteers(list);
+  });
+
+  indexListenerRef = db.ref(`eventsIndex/${eventId}`);
+  indexListenerRef.on('value', snap => {
+    const data = snap.val() || {};
+    const title = data.title || '';
+    if(title){
+      titleDisplay.textContent = title;
+      titleDisplay.dataset.raw = 'text';
+      isEventConfigured = true;
+    }else{
+      titleDisplay.textContent = '尚未設定場次標題';
+      titleDisplay.dataset.raw = 'placeholder';
+      isEventConfigured = false;
+    }
+    currentDeadline = data.deadline || '';
+    renderDeadlineTag();
+    applyLockState();
+  });
+}
+
+// ---- 表單 ----
+
+const noPriceCheck = el('inpNoPrice');
+const priceInput = el('inpPrice');
+
+noPriceCheck.addEventListener('change', () => {
+  priceInput.disabled = noPriceCheck.checked;
+  if(noPriceCheck.checked){ priceInput.value = ''; }
+});
+
+el('submitBtn').addEventListener('click', async () => {
+  if(!isEventConfigured){
+    setStatus('這個場次還沒有設定名稱，請先切換到正確的場次連結', true);
+    openEventPanel();
+    return;
+  }
+  const name = el('inpName').value.trim();
+  const qty = parseInt(el('inpQty').value, 10);
+  const noPrice = noPriceCheck.checked;
+  const priceRaw = priceInput.value;
+  const price = noPrice ? null : parseFloat(priceRaw);
+
+  if(!name){ setStatus('請填寫姓名', true); return; }
+  if(!qty || qty <= 0){ setStatus('請填寫有效的張數', true); return; }
+  if(!noPrice && (isNaN(price) || price < 0)){ setStatus('請填寫願付金額，或勾選「不限金額」', true); return; }
+
+  const existing = ordersCache.find(o => o.name === name);
+  const maxOrder = ordersCache.reduce((m,o) => Math.max(m, o.order || 0), 0);
+  const orderVal = existing ? existing.order : maxOrder + 1;
+  const newEntry = { name, qty, price: noPrice ? null : price, order: orderVal, ts: Date.now() };
+
+  setStatus('送出中…');
+  try{
+    await upsertOrderAPI(newEntry);
+    setStatus('已送出，感謝登記！');
+  }catch(e){
+    setStatus('送出失敗，請再試一次', true);
+  }
+});
+
+el('volunteerBtn').addEventListener('click', () => {
+  if(!isEventConfigured){
+    setStatus('這個場次還沒有設定名稱，請先切換到正確的場次連結', true);
+    openEventPanel();
+    return;
+  }
+  const nameInput = el('inpVolunteer');
+  const name = nameInput.value.trim();
+  if(!name) return;
+  nameInput.value = '';
+  addVolunteerAPI({ name, ts: Date.now() }).catch(() => {
+    setStatus('新增志工失敗，請再試一次', true);
+  });
+});
+
+el('inpVolunteer').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ el('volunteerBtn').click(); }
+});
+
+// ---- 標題顯示 ----
+const titleDisplay = el('titleDisplay');
+
+el('renameTitleBtn').addEventListener('click', async () => {
+  const val = el('inpRenameTitle').value.trim();
+  if(!val){
+    setStatus('請先輸入新的場次標題', true);
+    return;
+  }
+  if(!unlockOrganizer()) return;
+  await saveTitle(val);
+  setStatus('場次標題已更新！');
+});
+
+// ---- 匯出 Excel ----
+
+let xlsxLoadPromise = null;
+function ensureXlsxLoaded(){
+  if(window.XLSX) return Promise.resolve();
+  if(xlsxLoadPromise) return xlsxLoadPromise;
+  xlsxLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+  return xlsxLoadPromise;
+}
+
+el('exportBtn').addEventListener('click', async () => {
+  if(!ordersCache.length){
+    setStatus('目前還沒有資料可以匯出', true);
+    return;
+  }
+  const exportBtn = el('exportBtn');
+  exportBtn.disabled = true;
+  exportBtn.textContent = '準備中…';
+  try{
+    await ensureXlsxLoaded();
+  }catch(e){
+    setStatus('匯出套件載入失敗，請檢查網路連線後再試一次', true);
+    exportBtn.disabled = false;
+    exportBtn.textContent = '匯出 Excel';
+    return;
+  }
+
+  const list = ordersCache;
+  const rows = list.map((o, idx) => {
+    const hasPrice = o.price !== null && o.price !== undefined;
+    return {
+      '順序': idx + 1,
+      '姓名': o.name,
+      '張數': o.qty,
+      '單張願付金額': hasPrice ? o.price : '不限金額',
+      '小計': hasPrice ? o.qty * o.price : '不限金額',
+      '登記時間': new Date(o.ts).toLocaleString('zh-TW')
+    };
+  });
+  const totalQty = list.reduce((s,o) => s + o.qty, 0);
+  const pricedEntries = list.filter(o => o.price !== null && o.price !== undefined);
+  const totalAmount = pricedEntries.reduce((s,o) => s + o.qty * o.price, 0);
+  rows.push({});
+  rows.push({ '姓名': '總計', '張數': totalQty, '單張願付金額': '', '小計': totalAmount, '登記時間': '' });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:14},{wch:8},{wch:14},{wch:12},{wch:20}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '購票登記');
+
+  const volunteers = volunteersCache;
+  if(volunteers.length){
+    const vRows = [...volunteers].sort((a,b) => a.ts - b.ts).map(v => ({ '姓名': v.name }));
+    const wsV = XLSX.utils.json_to_sheet(vRows);
+    wsV['!cols'] = [{wch:14}];
+    XLSX.utils.book_append_sheet(wb, wsV, '幫搶志工');
+  }
+
+  const eventTitle = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '購票登記';
+  const filename = `${eventTitle}_購票登記_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, filename);
+
+  exportBtn.disabled = false;
+  exportBtn.textContent = '匯出 Excel';
+});
+
+// ---- 場次管理 ----
+
+async function refreshPointerTag(){
+  const tag = el('currentPointerTag');
+  tag.textContent = '讀取中…';
+  const current = await loadCurrentEventInfo();
+  if(!current){
+    tag.textContent = '尚未設定（目前會顯示「尚未設定正式場次」警告）';
+  }else{
+    tag.textContent = current === EVENT_ID ? `${current}（就是目前這個場次）` : current;
+  }
+}
+
+async function openEventPanel(){
+  const body = el('eventPanelBody');
+  body.style.display = 'block';
+  const events = await listEvents();
+  const switcher = el('eventSwitcher');
+  switcher.innerHTML = '<option value="">請選擇場次…</option>' + events.map(ev => {
+    const label = ev.title ? `${ev.title}（${ev.event}）` : `${ev.event}（尚未設定標題）`;
+    const selected = ev.event === EVENT_ID ? 'selected' : '';
+    return `<option value="${escapeHtml(ev.event)}" ${selected}>${escapeHtml(label)}</option>`;
+  }).join('');
+  el('inpRenameTitle').value = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '';
+  el('renameEventTag').textContent = EVENT_ID;
+  el('inpDeadlineInline').value = currentDeadline ? new Date(currentDeadline).toISOString().slice(0,10) : '';
+  refreshPointerTag();
+  el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+el('setCurrentBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  await setCurrentEventPointer(EVENT_ID);
+  setStatus('已將固定連結指向這個場次！');
+  refreshPointerTag();
+});
+
+el('unlockOrganizerBtn').addEventListener('click', () => {
+  unlockOrganizer();
+});
+
+el('toggleEventPanelBtn').addEventListener('click', () => {
+  const body = el('eventPanelBody');
+  const isHidden = body.style.display === 'none';
+  if(isHidden){
+    openEventPanel();
+  }else{
+    body.style.display = 'none';
+  }
+});
+
+el('warnSwitchBtn').addEventListener('click', () => {
+  openEventPanel();
+});
+
+el('eventSwitcher').addEventListener('change', async (e) => {
+  const chosen = e.target.value;
+  if(chosen && chosen !== EVENT_ID){
+    el('eventPanelBody').style.display = 'none';
+    await switchToEvent(chosen);
+  }
+});
+
+el('createEventBtn').addEventListener('click', async () => {
+  const name = el('inpNewEvent').value.trim();
+  if(!name){
+    setStatus('請先填寫新場次的名稱', true);
+    return;
+  }
+  if(!unlockOrganizer()) return;
+  const slug = name.replace(/\s+/g, '-');
+  const setAsCurrent = el('inpSetAsCurrent').checked;
+  el('createEventBtn').disabled = true;
+  setStatus('建立場次中…');
+  try{
+    await db.ref(`eventsIndex/${slug}`).set({ title: name, deadline: '' });
+    if(setAsCurrent){
+      await setCurrentEventPointer(slug);
+    }
+    el('eventPanelBody').style.display = 'none';
+    el('inpNewEvent').value = '';
+    el('createEventBtn').disabled = false;
+    await switchToEvent(slug);
+  }catch(e){
+    setStatus('建立失敗，請再試一次', true);
+    el('createEventBtn').disabled = false;
+  }
+});
+
+// ---- 截止日期 ----
+
+el('editDeadlineBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  await openEventPanel();
+  el('inpDeadlineInline').focus();
+});
+
+el('saveDeadlineInlineBtn').addEventListener('click', async () => {
+  const trimmed = el('inpDeadlineInline').value.trim();
+  if(!trimmed){
+    await saveDeadline('');
+    setStatus('已清除截止日期');
+    return;
+  }
+  const parsed = new Date(`${trimmed}T23:59:59`);
+  if(isNaN(parsed.getTime())){
+    setStatus('日期格式看起來不太對', true);
+    return;
+  }
+  await saveDeadline(parsed.toISOString());
+  setStatus('截止日期已更新！');
+});
+
+// ---- 場次切換（不整頁重載） ----
+
+function resetRegisterForm(){
+  el('inpName').value = '';
+  el('inpQty').value = '';
+  priceInput.value = '';
+  priceInput.disabled = false;
+  noPriceCheck.checked = false;
+  el('inpVolunteer').value = '';
+  setStatus('');
+}
+
+async function switchToEvent(newEventId){
+  EVENT_ID = newEventId;
+  history.pushState({}, '', buildEventUrl(newEventId));
+  resetRegisterForm();
+  await loadEventPage();
+}
+
+window.addEventListener('popstate', () => {
+  EVENT_ID = new URLSearchParams(window.location.search).get('event') || 'default';
+  resetRegisterForm();
+  loadEventPage();
+});
+
+async function loadEventPage(){
+  el('tableWrap').innerHTML = '<div class="empty-state">載入中…</div>';
+  el('volunteerList').innerHTML = '<div class="volunteer-empty">載入中…</div>';
+
+  const wasDefault = EVENT_ID === 'default';
+  if(wasDefault){
+    const resolved = await resolveEventId();
+    if(resolved !== 'default') EVENT_ID = resolved;
+  }
+  el('eventTag').textContent = wasDefault
+    ? `場次代碼:${EVENT_ID}（透過固定連結）`
+    : `場次代碼:${EVENT_ID}`;
+
+  ensureEventRegistered(EVENT_ID);
+  attachListeners(EVENT_ID);
+}
+
+async function init(){
+  await loadEventPage();
+  setInterval(() => {
+    renderDeadlineTag();
+    applyLockState();
+  }, 30000);
+}
+
+init();
+</script>
+
+</body>
+</html>
