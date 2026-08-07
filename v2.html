@@ -43,7 +43,7 @@
   /* ---- Ticket stub header (signature element) ---- */
   .stub{
     display:flex;
-    flex-direction:column;
+    align-items:center;
     background:var(--ink);
     background-size:cover;
     background-position:center;
@@ -52,7 +52,7 @@
     overflow:hidden;
     box-shadow:0 8px 24px rgba(27,36,48,0.18);
     position:relative;
-    min-height:230px;
+    min-height:150px;
   }
   .warn-banner{
     background:#FBEAE8;
@@ -90,13 +90,7 @@
     opacity:0.45;
     pointer-events:none;
   }
-  .stub-bar{
-    display:flex;
-    align-items:stretch;
-    background:var(--ink);
-    margin-top:auto;
-  }
-  .stub-bar-main{
+  .stub-main{
     flex:1;
     padding:16px 20px;
     min-width:0;
@@ -107,23 +101,24 @@
     letter-spacing:0.14em;
     color:var(--gold);
     text-transform:uppercase;
-    margin-bottom:8px;
+    margin-bottom:6px;
   }
   .stub-title{
     font-family:'Space Grotesk',sans-serif;
     font-weight:700;
-    font-size:22px;
+    font-size:20px;
     color:#fff;
-    line-height:1.3;
+    line-height:1.28;
     word-break:break-word;
+    text-shadow:0 1px 6px rgba(0,0,0,0.4);
   }
-  .stub-bar-divider{
+  .stub-divider{
+    align-self:stretch;
     width:0;
     border-left:2px dashed rgba(255,255,255,0.25);
     position:relative;
-    margin:12px 0;
   }
-  .stub-bar-divider::before,.stub-bar-divider::after{
+  .stub-divider::before,.stub-divider::after{
     content:'';
     position:absolute;
     left:-9px;
@@ -132,30 +127,32 @@
     border-radius:50%;
     background:var(--paper);
   }
-  .stub-bar-divider::before{top:-9px;}
-  .stub-bar-divider::after{bottom:-9px;}
+  .stub-divider::before{top:-9px;}
+  .stub-divider::after{bottom:-9px;}
   .stub-counter{
-    width:132px;
+    width:120px;
     padding:16px;
     display:flex;
     flex-direction:column;
     justify-content:center;
     align-items:center;
     text-align:center;
-    gap:10px;
+    gap:8px;
   }
   .counter-block .num{
     font-family:'IBM Plex Mono',monospace;
     font-weight:600;
-    font-size:26px;
+    font-size:24px;
     color:var(--gold);
     line-height:1;
+    text-shadow:0 1px 6px rgba(0,0,0,0.4);
   }
   .counter-block .lbl{
     font-size:10px;
-    color:rgba(255,255,255,0.55);
+    color:rgba(255,255,255,0.7);
     letter-spacing:0.08em;
     margin-top:4px;
+    text-shadow:0 1px 4px rgba(0,0,0,0.4);
   }
 
   /* ---- Deadline / event-code note (moved off the banner, plain area above the form) ---- */
@@ -499,21 +496,19 @@
   </div>
 
   <div class="stub" id="stubEl">
-    <div class="stub-bar">
-      <div class="stub-bar-main">
-        <div class="stub-eyebrow">團體購票登記</div>
-        <div id="titleDisplay" class="stub-title">尚未設定場次標題</div>
+    <div class="stub-main">
+      <div class="stub-eyebrow">團體購票登記</div>
+      <div id="titleDisplay" class="stub-title">尚未設定場次標題</div>
+    </div>
+    <div class="stub-divider"></div>
+    <div class="stub-counter">
+      <div class="counter-block">
+        <div class="num" id="totalQtyNum">0</div>
+        <div class="lbl">總張數</div>
       </div>
-      <div class="stub-bar-divider"></div>
-      <div class="stub-counter">
-        <div class="counter-block">
-          <div class="num" id="totalQtyNum">0</div>
-          <div class="lbl">總張數</div>
-        </div>
-        <div class="counter-block">
-          <div class="num" id="totalPeopleNum">0</div>
-          <div class="lbl">登記人數</div>
-        </div>
+      <div class="counter-block">
+        <div class="num" id="totalPeopleNum">0</div>
+        <div class="lbl">登記人數</div>
       </div>
     </div>
   </div>
@@ -565,6 +560,13 @@
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
         <div class="hint" style="margin-bottom:8px;">🔗 固定連結（不帶場次代碼的那個網址）目前指向:<strong id="currentPointerTag">讀取中…</strong></div>
+        <div class="field-row" style="margin-bottom:10px;">
+          <div class="field" style="flex:1;">
+            <label>固定連結網址（可直接複製分享）</label>
+            <input id="fixedLinkDisplay" type="text" readonly />
+          </div>
+        </div>
+        <button class="submit-btn" id="copyFixedLinkBtn" style="margin-bottom:10px;">複製固定連結</button>
         <button class="submit-btn" id="setCurrentBtn" style="background:var(--stamp);">把固定連結指向「目前這個場次」</button>
         <div class="hint">設定後，任何人打開不帶場次代碼的固定連結（例如放在共用夾裡的那個），都會自動看到這個場次，不用更換分享出去的連結。</div>
         <button class="link-btn" id="clearCurrentBtn" style="margin-top:8px;">清除固定連結指向（恢復成未設定狀態）</button>
@@ -594,6 +596,16 @@
         </div>
         <div style="text-align:right;margin-top:6px;">
           <button class="link-btn" id="resetBgPosBtn">重設為置中</button>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>文字垂直位置（避開臉部）</label>
+            <select id="inpTextPos">
+              <option value="top">靠上</option>
+              <option value="center" selected>置中</option>
+              <option value="bottom">靠下</option>
+            </select>
+          </div>
         </div>
         <button class="submit-btn" id="saveBgImageBtn" style="margin-top:10px;">更新背景圖片</button>
         <div class="hint">留空並送出可以清除背景圖片，恢復成預設深色底。圖片需要是可以直接開啟的圖片連結（結尾通常是 .jpg / .png / .webp）。</div>
@@ -707,6 +719,7 @@ let currentDeadline = '';
 let currentBgImage = '';
 let currentBgPosX = 50;
 let currentBgPosY = 50;
+let currentTextPos = 'center';
 let isOrganizerMode = false;
 
 function unlockOrganizer(){
@@ -1017,18 +1030,22 @@ function posToPercent(val, isY){
   return isNaN(num) ? 50 : num;
 }
 
-async function saveBgImage(url, posX, posY){
+async function saveBgImage(url, posX, posY, textPos){
   await db.ref(`eventsIndex/${EVENT_ID}/bgImage`).set(url || '');
   await db.ref(`eventsIndex/${EVENT_ID}/bgPosX`).set(posX === undefined ? 50 : posX);
   await db.ref(`eventsIndex/${EVENT_ID}/bgPosY`).set(posY === undefined ? 50 : posY);
+  await db.ref(`eventsIndex/${EVENT_ID}/textPos`).set(textPos || 'center');
 }
 
-function applyStubBackground(url, posX, posY){
+const TEXT_POS_ALIGN = { top: 'flex-start', center: 'center', bottom: 'flex-end' };
+
+function applyStubBackground(url, posX, posY, textPos){
   const stubEl = el('stubEl');
+  stubEl.style.alignItems = TEXT_POS_ALIGN[textPos] || 'center';
   if(url){
     const safeUrl = url.replace(/'/g, '%27');
     const position = `${posX === undefined ? 50 : posX}% ${posY === undefined ? 50 : posY}%`;
-    stubEl.style.background = `linear-gradient(to bottom, rgba(27,36,48,0) 65%, rgba(27,36,48,0.4) 100%), url('${safeUrl}') ${position}/cover no-repeat`;
+    stubEl.style.background = `linear-gradient(to bottom, rgba(27,36,48,0.55) 0%, rgba(27,36,48,0.1) 30%, rgba(27,36,48,0.1) 70%, rgba(27,36,48,0.55) 100%), url('${safeUrl}') ${position}/cover no-repeat`;
   }else{
     stubEl.style.background = '';
   }
@@ -1103,9 +1120,10 @@ function attachListeners(eventId){
     currentBgImage = data.bgImage || '';
     currentBgPosX = posToPercent(data.bgPosX, false);
     currentBgPosY = posToPercent(data.bgPosY, true);
+    currentTextPos = data.textPos || 'center';
     renderDeadlineTag();
     applyLockState();
-    applyStubBackground(currentBgImage, currentBgPosX, currentBgPosY);
+    applyStubBackground(currentBgImage, currentBgPosX, currentBgPosY, currentTextPos);
   });
 }
 
@@ -1281,26 +1299,47 @@ async function openEventPanel(){
   el('renameEventTag').textContent = EVENT_ID;
   el('inpDeadlineInline').value = currentDeadline ? new Date(currentDeadline).toISOString().slice(0,10) : '';
   el('inpBgImage').value = currentBgImage;
+  el('inpTextPos').value = currentTextPos;
   bgPreviewPosX = currentBgPosX;
   bgPreviewPosY = currentBgPosY;
   updateBgPreview();
+  el('fixedLinkDisplay').value = `${window.location.origin}${window.location.pathname}`;
   refreshPointerTag();
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+el('copyFixedLinkBtn').addEventListener('click', async () => {
+  const link = el('fixedLinkDisplay').value;
+  try{
+    await navigator.clipboard.writeText(link);
+    setStatus('已複製固定連結！');
+  }catch(e){
+    el('fixedLinkDisplay').select();
+    setStatus('自動複製失敗，已幫你反白，請手動 Ctrl/Cmd+C 複製', true);
+  }
+});
+
 el('setCurrentBtn').addEventListener('click', async () => {
   if(!unlockOrganizer()) return;
-  await setCurrentEventPointer(EVENT_ID);
-  setStatus('已將固定連結指向這個場次！');
-  refreshPointerTag();
+  try{
+    await setCurrentEventPointer(EVENT_ID);
+    setStatus('已將固定連結指向這個場次！');
+    await refreshPointerTag();
+  }catch(e){
+    setStatus('設定失敗：' + (e && e.message ? e.message : '請檢查網路連線或 Firebase 規則'), true);
+  }
 });
 
 el('clearCurrentBtn').addEventListener('click', async () => {
   if(!unlockOrganizer()) return;
   if(!confirm('確定要清除固定連結指向嗎？之後大家打開不帶場次代碼的連結，會看到「尚未設定正式場次」的警示，直到你重新設定指向某個場次為止。')) return;
-  await db.ref('meta/currentEvent').remove();
-  setStatus('已清除固定連結指向！');
-  refreshPointerTag();
+  try{
+    await db.ref('meta/currentEvent').remove();
+    setStatus('已清除固定連結指向！');
+    await refreshPointerTag();
+  }catch(e){
+    setStatus('清除失敗：' + (e && e.message ? e.message : '請檢查網路連線或 Firebase 規則'), true);
+  }
 });
 
 el('unlockOrganizerBtn').addEventListener('click', () => {
@@ -1436,7 +1475,8 @@ el('resetBgPosBtn').addEventListener('click', () => {
 
 el('saveBgImageBtn').addEventListener('click', async () => {
   const url = el('inpBgImage').value.trim();
-  await saveBgImage(url, bgPreviewPosX, bgPreviewPosY);
+  const textPos = el('inpTextPos').value;
+  await saveBgImage(url, bgPreviewPosX, bgPreviewPosY, textPos);
   setStatus(url ? '背景圖片已更新！' : '已清除背景圖片');
 });
 
