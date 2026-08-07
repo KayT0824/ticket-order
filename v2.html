@@ -574,6 +574,7 @@
         <div class="hint" style="margin-bottom:8px;">🔗 固定連結（不帶場次代碼的那個網址）目前指向:<strong id="currentPointerTag">讀取中…</strong></div>
         <button class="submit-btn" id="setCurrentBtn" style="background:var(--stamp);">把固定連結指向「目前這個場次」</button>
         <div class="hint">設定後，任何人打開不帶場次代碼的固定連結（例如放在共用夾裡的那個），都會自動看到這個場次，不用更換分享出去的連結。</div>
+        <button class="link-btn" id="clearCurrentBtn" style="margin-top:8px;">清除固定連結指向（恢復成未設定狀態）</button>
 
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
@@ -1292,6 +1293,14 @@ el('setCurrentBtn').addEventListener('click', async () => {
   if(!unlockOrganizer()) return;
   await setCurrentEventPointer(EVENT_ID);
   setStatus('已將固定連結指向這個場次！');
+  refreshPointerTag();
+});
+
+el('clearCurrentBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  if(!confirm('確定要清除固定連結指向嗎？之後大家打開不帶場次代碼的連結，會看到「尚未設定正式場次」的警示，直到你重新設定指向某個場次為止。')) return;
+  await db.ref('meta/currentEvent').remove();
+  setStatus('已清除固定連結指向！');
   refreshPointerTag();
 });
 
