@@ -43,11 +43,16 @@
   /* ---- Ticket stub header (signature element) ---- */
   .stub{
     display:flex;
+    align-items:center;
     background:var(--ink);
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
     border-radius:14px;
     overflow:hidden;
     box-shadow:0 8px 24px rgba(27,36,48,0.18);
     position:relative;
+    min-height:150px;
   }
   .warn-banner{
     background:#FBEAE8;
@@ -87,73 +92,33 @@
   }
   .stub-main{
     flex:1;
-    padding:22px 20px;
+    padding:16px 20px;
     min-width:0;
+    background:linear-gradient(to right, rgba(20,26,35,0.68) 0%, rgba(20,26,35,0.5) 65%, rgba(20,26,35,0.15) 100%);
   }
   .stub-eyebrow{
     font-family:'IBM Plex Mono',monospace;
-    font-size:11px;
+    font-size:clamp(9px, 2.4vw, 11px);
     letter-spacing:0.14em;
     color:var(--gold);
     text-transform:uppercase;
-    margin-bottom:8px;
+    margin-bottom:6px;
+    text-shadow:0 1px 4px rgba(0,0,0,0.5);
   }
   .stub-title{
     font-family:'Space Grotesk',sans-serif;
     font-weight:700;
-    font-size:22px;
+    font-size:clamp(15px, 4.3vw, 20px);
     color:#fff;
-    line-height:1.3;
+    line-height:1.28;
     word-break:break-word;
-  }
-  .stub-title-input{
-    background:transparent;
-    border:none;
-    border-bottom:1px dashed rgba(255,255,255,0.35);
-    color:#fff;
-    font-family:'Space Grotesk',sans-serif;
-    font-weight:700;
-    font-size:22px;
-    width:100%;
-    padding:2px 0 4px;
-    outline:none;
-  }
-  .stub-title-input::placeholder{color:rgba(255,255,255,0.45);}
-  .stub-edit{
-    margin-top:10px;
-    background:none;
-    border:none;
-    color:rgba(255,255,255,0.55);
-    font-size:12px;
-    cursor:pointer;
-    padding:0;
-    font-family:'Inter',sans-serif;
-    text-decoration:underline;
-  }
-  .event-tag{
-    margin-top:8px;
-    font-family:'IBM Plex Mono',monospace;
-    font-size:10.5px;
-    color:rgba(232,162,61,0.75);
-    letter-spacing:0.03em;
-  }
-  .deadline-row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin-top:6px;
-    flex-wrap:wrap;
-  }
-  .deadline-tag{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11px;
-    color:rgba(255,255,255,0.65);
-  }
-  .deadline-tag.passed{
-    color:#F0938A;
-    font-weight:600;
+    text-shadow:0 1px 3px rgba(0,0,0,0.6), 0 2px 10px rgba(0,0,0,0.5);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   .stub-divider{
+    align-self:stretch;
     width:0;
     border-left:2px dashed rgba(255,255,255,0.25);
     position:relative;
@@ -170,32 +135,67 @@
   .stub-divider::before{top:-9px;}
   .stub-divider::after{bottom:-9px;}
   .stub-counter{
-    width:132px;
-    padding:22px 16px;
+    width:120px;
+    padding:16px;
     display:flex;
     flex-direction:column;
     justify-content:center;
     align-items:center;
     text-align:center;
-    gap:10px;
+    gap:8px;
   }
   .counter-block .num{
     font-family:'IBM Plex Mono',monospace;
     font-weight:600;
-    font-size:26px;
+    font-size:24px;
     color:var(--gold);
     line-height:1;
+    text-shadow:0 1px 6px rgba(0,0,0,0.4);
   }
   .counter-block .lbl{
     font-size:10px;
-    color:rgba(255,255,255,0.55);
+    color:rgba(255,255,255,0.7);
     letter-spacing:0.08em;
     margin-top:4px;
+    text-shadow:0 1px 4px rgba(0,0,0,0.4);
+  }
+
+  /* ---- Deadline / event-code note (moved off the banner, plain area above the form) ---- */
+  .deadline-note{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+  }
+  .deadline-note .deadline-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .deadline-note .deadline-tag.passed{
+    color:var(--stamp);
+    font-weight:600;
+  }
+  .deadline-note .stub-edit{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:12px;
+    cursor:pointer;
+    padding:0;
+    font-family:'Inter',sans-serif;
+    text-decoration:underline;
+  }
+  .deadline-note .stub-edit:hover{color:var(--gold-deep);}
+  .deadline-note .event-tag-inline{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
   }
 
   @media (max-width:380px){
-    .stub-main{padding:16px 14px;}
-    .stub-title{font-size:18px;}
+    .stub-main{padding:14px 14px;}
     .stub-counter{width:104px;padding:16px 10px;}
     .counter-block .num{font-size:21px;}
   }
@@ -300,6 +300,14 @@
     cursor:pointer;
   }
   .export-btn:hover{border-color:var(--gold-deep);color:var(--gold-deep);}
+  .full-title-display{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:16px;
+    color:var(--ink);
+    line-height:1.4;
+    word-break:break-word;
+  }
   .link-btn{
     background:none;
     border:none;
@@ -311,6 +319,33 @@
     font-family:'Inter',sans-serif;
   }
   .link-btn:hover{color:var(--gold-deep);}
+  .bg-preview-box{
+    margin-top:10px;
+    height:130px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background-color:#222430;
+    background-size:cover;
+    background-repeat:no-repeat;
+    cursor:grab;
+    touch-action:none;
+    user-select:none;
+    -webkit-user-select:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .bg-preview-box:active{cursor:grabbing;}
+  .bg-preview-box .bg-preview-hint{
+    color:rgba(255,255,255,0.55);
+    font-size:12px;
+    pointer-events:none;
+    text-align:center;
+    padding:0 16px;
+  }
+  .bg-preview-box.has-image .bg-preview-hint{display:none;}
   .no-price-tag{
     color:var(--ink-soft);
     font-style:italic;
@@ -472,15 +507,10 @@
     <button class="warn-btn" id="warnSwitchBtn">切換到正確場次</button>
   </div>
 
-  <div class="stub">
+  <div class="stub" id="stubEl">
     <div class="stub-main">
       <div class="stub-eyebrow">團體購票登記</div>
       <div id="titleDisplay" class="stub-title">尚未設定場次標題</div>
-      <div class="deadline-row">
-        <div class="deadline-tag" id="deadlineTag">尚未設定截止時間</div>
-        <button class="stub-edit" id="editDeadlineBtn" style="display:none;">設定截止時間🔒</button>
-      </div>
-      <div class="event-tag" id="eventTag"></div>
     </div>
     <div class="stub-divider"></div>
     <div class="stub-counter">
@@ -496,11 +526,12 @@
   </div>
 
   <div class="card event-panel" id="eventPanelWrap">
-    <div class="card-header-row" style="margin-bottom:10px;">
+    <div class="card-header-row" style="margin-bottom:6px;">
       <h2 style="font-size:13px;">📅 場次</h2>
       <button class="export-btn" id="toggleEventPanelBtn">切換場次</button>
     </div>
-    <div id="eventPanelBody" style="display:none;">
+    <div class="full-title-display" id="fullTitleDisplay">尚未設定場次標題</div>
+    <div id="eventPanelBody" style="display:none;margin-top:10px;">
       <div class="field">
         <label>切換到現有場次</label>
         <select id="eventSwitcher">
@@ -542,8 +573,16 @@
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
         <div class="hint" style="margin-bottom:8px;">🔗 固定連結（不帶場次代碼的那個網址）目前指向:<strong id="currentPointerTag">讀取中…</strong></div>
+        <div class="field-row" style="margin-bottom:10px;">
+          <div class="field" style="flex:1;">
+            <label>固定連結網址（可直接複製分享）</label>
+            <input id="fixedLinkDisplay" type="text" readonly />
+          </div>
+        </div>
+        <button class="submit-btn" id="copyFixedLinkBtn" style="margin-bottom:10px;">複製固定連結</button>
         <button class="submit-btn" id="setCurrentBtn" style="background:var(--stamp);">把固定連結指向「目前這個場次」</button>
         <div class="hint">設定後，任何人打開不帶場次代碼的固定連結（例如放在共用夾裡的那個），都會自動看到這個場次，不用更換分享出去的連結。</div>
+        <button class="link-btn" id="clearCurrentBtn" style="margin-top:8px;">清除固定連結指向（恢復成未設定狀態）</button>
 
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
@@ -555,11 +594,56 @@
         </div>
         <button class="submit-btn" id="saveDeadlineInlineBtn" style="margin-top:10px;">更新截止日期</button>
         <div class="hint">留空並送出可以清除截止日期。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>票根背景圖片網址</label>
+            <input id="inpBgImage" type="text" placeholder="貼上圖片連結，例如 https://..." />
+          </div>
+        </div>
+        <div class="hint" style="margin-top:8px;">貼上網址後，在下方預覽圖用滑鼠拖曳（手機用手指拖曳）調整位置，讓臉對齊在最適當的地方。</div>
+        <div id="bgPreviewBox" class="bg-preview-box">
+          <div class="bg-preview-hint">貼上圖片網址後可拖曳這裡調整位置</div>
+        </div>
+        <div style="text-align:right;margin-top:6px;">
+          <button class="link-btn" id="resetBgPosBtn">重設為置中</button>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>文字垂直位置（避開臉部）</label>
+            <select id="inpTextPos">
+              <option value="top">靠上</option>
+              <option value="center" selected>置中</option>
+              <option value="bottom">靠下</option>
+            </select>
+          </div>
+        </div>
+        <button class="submit-btn" id="saveBgImageBtn" style="margin-top:10px;">更新背景圖片</button>
+        <div class="hint">留空並送出可以清除背景圖片，恢復成預設深色底。圖片需要是可以直接開啟的圖片連結（結尾通常是 .jpg / .png / .webp）。</div>
       </div>
     </div>
   </div>
 
+  <div class="card" id="volunteerCard">
+    <h2>🙋 自願幫忙搶票</h2>
+    <div class="field-row">
+      <div class="field name" style="flex:1;">
+        <label>姓名</label>
+        <input id="inpVolunteer" type="text" placeholder="有空幫忙搶票就填這裡" />
+      </div>
+    </div>
+    <button class="submit-btn" id="volunteerBtn" style="background:var(--gold-deep);">我也要幫忙搶票</button>
+    <div id="volunteerList" class="volunteer-list"></div>
+  </div>
+
   <div class="card" id="registerCard">
+    <div class="deadline-note">
+      <span class="deadline-tag" id="deadlineTag">尚未設定截止時間</span>
+      <button class="stub-edit" id="editDeadlineBtn" style="display:none;">設定截止時間🔒</button>
+      <span class="event-tag-inline" id="eventTag" style="display:none;"></span>
+    </div>
     <h2>填寫我的登記</h2>
     <div class="field-row">
       <div class="field name">
@@ -582,18 +666,6 @@
     <button class="submit-btn" id="submitBtn">送出 / 更新我的登記</button>
     <div class="hint">同名會覆蓋成最新的登記內容，之後想改張數或金額直接重填送出即可。</div>
     <div class="status" id="statusMsg"></div>
-  </div>
-
-  <div class="card" id="volunteerCard">
-    <h2>🙋 自願幫忙搶票</h2>
-    <div class="field-row">
-      <div class="field name" style="flex:1;">
-        <label>姓名</label>
-        <input id="inpVolunteer" type="text" placeholder="有空幫忙搶票就填這裡" />
-      </div>
-    </div>
-    <button class="submit-btn" id="volunteerBtn" style="background:var(--gold-deep);">我也要幫忙搶票</button>
-    <div id="volunteerList" class="volunteer-list"></div>
   </div>
 
   <div class="card list-card">
@@ -621,24 +693,46 @@
 
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
-// ⚠️ 部署 Apps Script 後，把下面換成你的「網頁應用程式網址」
-// 範例：https://script.google.com/macros/s/AKfycb.../exec
-const API_URL = 'https://script.google.com/macros/s/AKfycbyljXc7_XkYqXE4zMDdjPtaCjFs3W5749Ec4nYIbJhF6uXV0MSucoyfy9NSFkvO_IkX/exec';
+// ---- Firebase 設定與初始化 ----
+const firebaseConfig = {
+  apiKey: "AIzaSyAg4Q2iDBwLEZrm3aAN_veP_CSdi0iN-Cg",
+  authDomain: "ticket-order.firebaseapp.com",
+  databaseURL: "https://ticket-order-default-rtdb.firebaseio.com",
+  projectId: "ticket-order",
+  storageBucket: "ticket-order.firebasestorage.app",
+  messagingSenderId: "804053169904",
+  appId: "1:804053169904:web:45f9583b309ed8216c3435"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-// ⚠️ 主辦人專用密碼，只用來保護「設定截止時間」，改成你自己想用的密碼即可
+// ⚠️ 主辦人專用密碼，只用來保護管理功能，改成你自己想用的密碼即可
 const ORGANIZER_PIN = '0824';
 
-const ORDERS_KEY = 'orders';
-const TITLE_KEY = 'event-title';
-const VOLUNTEERS_KEY = 'volunteers';
 let EVENT_ID = new URLSearchParams(window.location.search).get('event') || 'default';
+
+function sanitizeKey(str){
+  return encodeURIComponent(str).replace(/\./g, '%2E');
+}
+
+function buildEventUrl(eventId){
+  const url = new URL(window.location.href);
+  url.searchParams.set('event', eventId);
+  return url.toString();
+}
 
 const el = (id) => document.getElementById(id);
 let ordersCache = [];
 let volunteersCache = [];
 let isEventConfigured = false;
 let currentDeadline = '';
+let currentBgImage = '';
+let currentBgPosX = 50;
+let currentBgPosY = 50;
+let currentTextPos = 'center';
 let isOrganizerMode = false;
 
 function unlockOrganizer(){
@@ -651,6 +745,7 @@ function unlockOrganizer(){
   }
   isOrganizerMode = true;
   el('editDeadlineBtn').style.display = 'inline-block';
+  el('eventTag').style.display = 'inline-block';
   el('organizerSection').style.display = 'block';
   el('unlockOrganizerBtn').style.display = 'none';
   return true;
@@ -691,176 +786,45 @@ function applyLockState(){
     warnBtn.style.display = 'none';
   }
 }
-const tableWrap = el('tableWrap');
-const statusMsg = el('statusMsg');
 
-function setStatus(msg, isErr){
-  statusMsg.textContent = msg || '';
-  statusMsg.className = 'status' + (isErr ? ' err' : '');
+function renderDeadlineTag(){
+  const tag = el('deadlineTag');
+  if(!currentDeadline){
+    tag.textContent = '尚未設定截止時間';
+    tag.classList.remove('passed');
+    return;
+  }
+  const d = new Date(currentDeadline);
+  const label = `登記截止:${d.toLocaleDateString('zh-TW')}`;
+  if(isDeadlinePassed()){
+    tag.textContent = `${label}（已截止）`;
+    tag.classList.add('passed');
+  }else{
+    tag.textContent = label;
+    tag.classList.remove('passed');
+  }
 }
 
 function fmtMoney(n){
   return '$' + Number(n).toLocaleString();
 }
 
-async function loadEventData(){
-  try{
-    const res = await fetch(`${API_URL}?action=getEventData&event=${encodeURIComponent(EVENT_ID)}`);
-    return await res.json();
-  }catch(e){
-    return { title: '', deadline: '', orders: [], volunteers: [] };
-  }
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
 }
 
-async function loadOrders(){
-  try{
-    const res = await fetch(`${API_URL}?action=getOrders&event=${encodeURIComponent(EVENT_ID)}`);
-    return await res.json();
-  }catch(e){
-    return [];
-  }
+function setStatus(msg, isErr){
+  const statusMsg = el('statusMsg');
+  statusMsg.textContent = msg || '';
+  statusMsg.className = 'status' + (isErr ? ' err' : '');
 }
 
-async function upsertOrderAPI(entry){
-  try{
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'upsertOrder', event: EVENT_ID, data: entry })
-    });
-    return true;
-  }catch(e){
-    return false;
-  }
-}
-
-async function deleteOrderAPI(name){
-  try{
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'deleteOrder', event: EVENT_ID, name })
-    });
-    return true;
-  }catch(e){
-    return false;
-  }
-}
-
-async function moveOrderAPI(name, direction){
-  try{
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'moveOrder', event: EVENT_ID, name, direction })
-    });
-    return true;
-  }catch(e){
-    return false;
-  }
-}
-
-async function loadTitle(){
-  try{
-    const res = await fetch(`${API_URL}?action=getTitle&event=${encodeURIComponent(EVENT_ID)}`);
-    const data = await res.json();
-    return data.title || '';
-  }catch(e){
-    return '';
-  }
-}
-
-async function saveTitle(t){
-  try{
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'saveTitle', event: EVENT_ID, data: t })
-    });
-  }catch(e){}
-}
-
-async function loadDeadline(){
-  try{
-    const res = await fetch(`${API_URL}?action=getDeadline&event=${encodeURIComponent(EVENT_ID)}`);
-    const data = await res.json();
-    return data.deadline || '';
-  }catch(e){
-    return '';
-  }
-}
-
-async function saveDeadline(iso){
-  try{
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'saveDeadline', event: EVENT_ID, data: iso })
-    });
-    return true;
-  }catch(e){
-    return false;
-  }
-}
-
-async function loadVolunteers(){
-  try{
-    const res = await fetch(`${API_URL}?action=getVolunteers&event=${encodeURIComponent(EVENT_ID)}`);
-    return await res.json();
-  }catch(e){
-    return [];
-  }
-}
-
-async function addVolunteerAPI(entry){
-  try{
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'addVolunteer', event: EVENT_ID, data: entry })
-    });
-    return true;
-  }catch(e){
-    return false;
-  }
-}
-
-async function removeVolunteerAPI(name){
-  try{
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'removeVolunteer', event: EVENT_ID, name })
-    });
-    return true;
-  }catch(e){
-    return false;
-  }
-}
-
-function renderVolunteers(list){
-  const wrap = el('volunteerList');
-  if(!list.length){
-    wrap.innerHTML = '<div class="volunteer-empty">目前還沒有人自願幫忙搶票</div>';
-    return;
-  }
-  const sorted = [...list].sort((a,b) => a.ts - b.ts);
-  wrap.innerHTML = sorted.map(v => `
-    <div class="volunteer-chip">
-      ${escapeHtml(v.name)}
-      <button data-name="${escapeHtml(v.name)}" title="移除">✕</button>
-    </div>
-  `).join('');
-
-  wrap.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if(btn.disabled) return;
-      const name = btn.getAttribute('data-name');
-      const optimistic = list.filter(v => v.name !== name);
-      volunteersCache = optimistic;
-      renderVolunteers(optimistic);
-
-      removeVolunteerAPI(name).then(ok => {
-        if(!ok) setStatus('移除志工失敗，請再試一次', true);
-      });
-    });
-  });
-}
+// ---- 大家的登記 ----
 
 function renderTable(list){
+  const tableWrap = el('tableWrap');
   if(!list.length){
     tableWrap.innerHTML = '<div class="empty-state">還沒有人登記，第一個填寫上面的表單吧</div>';
     return;
@@ -909,16 +873,9 @@ function renderTable(list){
       if(btn.disabled) return;
       const idx = parseInt(btn.getAttribute('data-idx'), 10);
       const dir = btn.getAttribute('data-dir');
-      const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
-      if(targetIdx < 0 || targetIdx >= list.length) return;
       const name = list[idx].name;
-
-      const optimistic = [...list];
-      [optimistic[idx], optimistic[targetIdx]] = [optimistic[targetIdx], optimistic[idx]];
-      setOrders(optimistic);
-
-      moveOrderAPI(name, dir).then(ok => {
-        if(!ok) setStatus('順序更新失敗，畫面可能與試算表不同步，請重新整理', true);
+      moveOrderAPI(name, dir).catch(() => {
+        setStatus('順序更新失敗，請重新整理', true);
       });
     });
   });
@@ -947,11 +904,8 @@ function renderTable(list){
       if(btn.disabled) return;
       if(btn.dataset.confirm === '1'){
         const name = btn.getAttribute('data-name');
-        const optimistic = list.filter(o => o.name !== name);
-        setOrders(optimistic);
-
-        deleteOrderAPI(name).then(ok => {
-          if(!ok) setStatus('刪除失敗，畫面可能與試算表不同步，請重新整理', true);
+        deleteOrderAPI(name).catch(() => {
+          setStatus('刪除失敗，請重新整理', true);
         });
         return;
       }
@@ -971,12 +925,6 @@ function renderTable(list){
   });
 }
 
-function escapeHtml(str){
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
-
 function updateTotals(list){
   const totalQty = list.reduce((s,o) => s + o.qty, 0);
   const pricedEntries = list.filter(o => o.price !== null && o.price !== undefined);
@@ -994,16 +942,207 @@ function updateTotals(list){
   noteEl.textContent = unpricedCount ? `金額總計不含 ${unpricedCount} 位「不限金額」的登記` : '';
 }
 
-async function refresh(){
-  const list = await loadOrders();
-  setOrders(list);
+// ---- 志工 ----
+
+function renderVolunteers(list){
+  const wrap = el('volunteerList');
+  if(!list.length){
+    wrap.innerHTML = '<div class="volunteer-empty">目前還沒有人自願幫忙搶票</div>';
+    return;
+  }
+  const sorted = [...list].sort((a,b) => a.ts - b.ts);
+  wrap.innerHTML = sorted.map(v => `
+    <div class="volunteer-chip">
+      ${escapeHtml(v.name)}
+      <button data-name="${escapeHtml(v.name)}" title="移除">✕</button>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.disabled) return;
+      const name = btn.getAttribute('data-name');
+      removeVolunteerAPI(name).catch(() => {
+        setStatus('移除志工失敗，請再試一次', true);
+      });
+    });
+  });
 }
 
-function setOrders(list){
-  ordersCache = list;
-  renderTable(list);
-  updateTotals(list);
+// ---- Firebase 讀寫 ----
+
+async function resolveEventId(){
+  const snap = await db.ref('meta/currentEvent').once('value');
+  const mapped = snap.val();
+  return mapped || 'default';
 }
+
+function ensureEventRegistered(eventId){
+  const ref = db.ref(`eventsIndex/${eventId}`);
+  ref.once('value').then(snap => {
+    if(!snap.exists()){
+      ref.set({ title: '', deadline: '' });
+    }
+  });
+}
+
+async function upsertOrderAPI(entry){
+  const key = sanitizeKey(entry.name);
+  await db.ref(`events/${EVENT_ID}/orders/${key}`).set({
+    name: entry.name,
+    qty: entry.qty,
+    price: (entry.price === null || entry.price === undefined) ? null : entry.price,
+    order: entry.order,
+    ts: entry.ts || Date.now()
+  });
+}
+
+async function deleteOrderAPI(name){
+  await db.ref(`events/${EVENT_ID}/orders/${sanitizeKey(name)}`).remove();
+}
+
+async function moveOrderAPI(name, direction){
+  const idx = ordersCache.findIndex(o => o.name === name);
+  if(idx === -1) return;
+  const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if(targetIdx < 0 || targetIdx >= ordersCache.length) return;
+  const a = ordersCache[idx];
+  const b = ordersCache[targetIdx];
+  const updates = {};
+  updates[`events/${EVENT_ID}/orders/${sanitizeKey(a.name)}/order`] = b.order;
+  updates[`events/${EVENT_ID}/orders/${sanitizeKey(b.name)}/order`] = a.order;
+  await db.ref().update(updates);
+}
+
+async function addVolunteerAPI(entry){
+  const key = sanitizeKey(entry.name);
+  const ref = db.ref(`events/${EVENT_ID}/volunteers/${key}`);
+  const snap = await ref.once('value');
+  if(snap.exists()) return;
+  await ref.set(entry);
+}
+
+async function removeVolunteerAPI(name){
+  await db.ref(`events/${EVENT_ID}/volunteers/${sanitizeKey(name)}`).remove();
+}
+
+async function saveTitle(val){
+  await db.ref(`eventsIndex/${EVENT_ID}/title`).set(val);
+}
+
+async function saveDeadline(iso){
+  await db.ref(`eventsIndex/${EVENT_ID}/deadline`).set(iso || '');
+}
+
+function posToPercent(val, isY){
+  if(val === undefined || val === null || val === ''){ return 50; }
+  if(typeof val === 'number'){ return val; }
+  const map = isY ? {top:0, center:50, bottom:100} : {left:0, center:50, right:100};
+  if(Object.prototype.hasOwnProperty.call(map, val)){ return map[val]; }
+  const num = parseFloat(val);
+  return isNaN(num) ? 50 : num;
+}
+
+async function saveBgImage(url, posX, posY, textPos){
+  await db.ref(`eventsIndex/${EVENT_ID}/bgImage`).set(url || '');
+  await db.ref(`eventsIndex/${EVENT_ID}/bgPosX`).set(posX === undefined ? 50 : posX);
+  await db.ref(`eventsIndex/${EVENT_ID}/bgPosY`).set(posY === undefined ? 50 : posY);
+  await db.ref(`eventsIndex/${EVENT_ID}/textPos`).set(textPos || 'center');
+}
+
+const TEXT_POS_ALIGN = { top: 'flex-start', center: 'center', bottom: 'flex-end' };
+
+function applyStubBackground(url, posX, posY, textPos){
+  const stubEl = el('stubEl');
+  stubEl.style.alignItems = TEXT_POS_ALIGN[textPos] || 'center';
+  if(url){
+    const safeUrl = url.replace(/'/g, '%27');
+    const position = `${posX === undefined ? 50 : posX}% ${posY === undefined ? 50 : posY}%`;
+    stubEl.style.background = `linear-gradient(to bottom, rgba(27,36,48,0.55) 0%, rgba(27,36,48,0.1) 30%, rgba(27,36,48,0.1) 70%, rgba(27,36,48,0.55) 100%), url('${safeUrl}') ${position}/cover no-repeat`;
+  }else{
+    stubEl.style.background = '';
+  }
+}
+
+async function listEvents(){
+  const snap = await db.ref('eventsIndex').once('value');
+  const val = snap.val() || {};
+  return Object.keys(val).map(k => ({
+    event: k,
+    title: (val[k] && val[k].title) || '',
+    deadline: (val[k] && val[k].deadline) || ''
+  }));
+}
+
+async function loadCurrentEventInfo(){
+  const snap = await db.ref('meta/currentEvent').once('value');
+  return snap.val() || '';
+}
+
+async function setCurrentEventPointer(eventId){
+  await db.ref('meta/currentEvent').set(eventId);
+}
+
+// ---- 即時監聽（有人異動資料，畫面自動更新） ----
+
+let ordersListenerRef = null;
+let volunteersListenerRef = null;
+let indexListenerRef = null;
+
+function detachListeners(){
+  if(ordersListenerRef) ordersListenerRef.off();
+  if(volunteersListenerRef) volunteersListenerRef.off();
+  if(indexListenerRef) indexListenerRef.off();
+}
+
+function attachListeners(eventId){
+  detachListeners();
+
+  ordersListenerRef = db.ref(`events/${eventId}/orders`);
+  ordersListenerRef.on('value', snap => {
+    const val = snap.val() || {};
+    const list = Object.keys(val).map(k => val[k]);
+    list.sort((a,b) => (a.order || 0) - (b.order || 0));
+    ordersCache = list;
+    renderTable(list);
+    updateTotals(list);
+  });
+
+  volunteersListenerRef = db.ref(`events/${eventId}/volunteers`);
+  volunteersListenerRef.on('value', snap => {
+    const val = snap.val() || {};
+    const list = Object.keys(val).map(k => val[k]);
+    volunteersCache = list;
+    renderVolunteers(list);
+  });
+
+  indexListenerRef = db.ref(`eventsIndex/${eventId}`);
+  indexListenerRef.on('value', snap => {
+    const data = snap.val() || {};
+    const title = data.title || '';
+    if(title){
+      titleDisplay.textContent = title;
+      titleDisplay.dataset.raw = 'text';
+      isEventConfigured = true;
+      el('fullTitleDisplay').textContent = title;
+    }else{
+      titleDisplay.textContent = '尚未設定場次標題';
+      titleDisplay.dataset.raw = 'placeholder';
+      isEventConfigured = false;
+      el('fullTitleDisplay').textContent = '尚未設定場次標題';
+    }
+    currentDeadline = data.deadline || '';
+    currentBgImage = data.bgImage || '';
+    currentBgPosX = posToPercent(data.bgPosX, false);
+    currentBgPosY = posToPercent(data.bgPosY, true);
+    currentTextPos = data.textPos || 'center';
+    renderDeadlineTag();
+    applyLockState();
+    applyStubBackground(currentBgImage, currentBgPosX, currentBgPosY, currentTextPos);
+  });
+}
+
+// ---- 表單 ----
 
 const noPriceCheck = el('inpNoPrice');
 const priceInput = el('inpPrice');
@@ -1029,21 +1168,18 @@ el('submitBtn').addEventListener('click', async () => {
   if(!qty || qty <= 0){ setStatus('請填寫有效的張數', true); return; }
   if(!noPrice && (isNaN(price) || price < 0)){ setStatus('請填寫願付金額，或勾選「不限金額」', true); return; }
 
-  const newEntry = { name, qty, price: noPrice ? null : price, ts: Date.now() };
-  const existingIdx = ordersCache.findIndex(o => o.name === name);
-  let optimistic;
-  if(existingIdx > -1){
-    optimistic = [...ordersCache];
-    optimistic[existingIdx] = newEntry;
-  }else{
-    optimistic = [...ordersCache, newEntry];
-  }
-  setOrders(optimistic);
-  setStatus('已送出，感謝登記！');
+  const existing = ordersCache.find(o => o.name === name);
+  const maxOrder = ordersCache.reduce((m,o) => Math.max(m, o.order || 0), 0);
+  const orderVal = existing ? existing.order : maxOrder + 1;
+  const newEntry = { name, qty, price: noPrice ? null : price, order: orderVal, ts: Date.now() };
 
-  upsertOrderAPI(newEntry).then(ok => {
-    if(!ok) setStatus('送出失敗，請再試一次', true);
-  });
+  setStatus('送出中…');
+  try{
+    await upsertOrderAPI(newEntry);
+    setStatus('已送出，感謝登記！');
+  }catch(e){
+    setStatus('送出失敗，請再試一次', true);
+  }
 });
 
 el('volunteerBtn').addEventListener('click', () => {
@@ -1055,18 +1191,9 @@ el('volunteerBtn').addEventListener('click', () => {
   const nameInput = el('inpVolunteer');
   const name = nameInput.value.trim();
   if(!name) return;
-  if(volunteersCache.some(v => v.name === name)){
-    nameInput.value = '';
-    return;
-  }
   nameInput.value = '';
-
-  const optimistic = [...volunteersCache, { name, ts: Date.now() }];
-  volunteersCache = optimistic;
-  renderVolunteers(optimistic);
-
-  addVolunteerAPI({ name, ts: Date.now() }).then(ok => {
-    if(!ok) setStatus('新增志工失敗，請再試一次', true);
+  addVolunteerAPI({ name, ts: Date.now() }).catch(() => {
+    setStatus('新增志工失敗，請再試一次', true);
   });
 });
 
@@ -1074,16 +1201,8 @@ el('inpVolunteer').addEventListener('keydown', (e) => {
   if(e.key === 'Enter'){ el('volunteerBtn').click(); }
 });
 
-// Title display + rename (via 場次管理 panel)
+// ---- 標題顯示 ----
 const titleDisplay = el('titleDisplay');
-
-async function applyTitleUpdate(val){
-  titleDisplay.textContent = val;
-  titleDisplay.dataset.raw = 'text';
-  isEventConfigured = true;
-  applyLockState();
-  await saveTitle(val);
-}
 
 el('renameTitleBtn').addEventListener('click', async () => {
   const val = el('inpRenameTitle').value.trim();
@@ -1092,9 +1211,11 @@ el('renameTitleBtn').addEventListener('click', async () => {
     return;
   }
   if(!unlockOrganizer()) return;
-  await applyTitleUpdate(val);
+  await saveTitle(val);
   setStatus('場次標題已更新！');
 });
+
+// ---- 匯出 Excel ----
 
 let xlsxLoadPromise = null;
 function ensureXlsxLoaded(){
@@ -1166,39 +1287,7 @@ el('exportBtn').addEventListener('click', async () => {
   exportBtn.textContent = '匯出 Excel';
 });
 
-async function listEvents(){
-  try{
-    const res = await fetch(`${API_URL}?action=listEvents`);
-    return await res.json();
-  }catch(e){
-    return [];
-  }
-}
-
-async function registerCurrentEvent(){
-  try{
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'registerEvent', event: EVENT_ID })
-    });
-  }catch(e){}
-}
-
-function buildEventUrl(eventId){
-  const url = new URL(window.location.href);
-  url.searchParams.set('event', eventId);
-  return url.toString();
-}
-
-async function loadCurrentEventInfo(){
-  try{
-    const res = await fetch(`${API_URL}?action=getCurrentEventInfo`);
-    const data = await res.json();
-    return data.current || '';
-  }catch(e){
-    return '';
-  }
-}
+// ---- 場次管理 ----
 
 async function refreshPointerTag(){
   const tag = el('currentPointerTag');
@@ -1224,18 +1313,48 @@ async function openEventPanel(){
   el('inpRenameTitle').value = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '';
   el('renameEventTag').textContent = EVENT_ID;
   el('inpDeadlineInline').value = currentDeadline ? new Date(currentDeadline).toISOString().slice(0,10) : '';
+  el('inpBgImage').value = currentBgImage;
+  el('inpTextPos').value = currentTextPos;
+  bgPreviewPosX = currentBgPosX;
+  bgPreviewPosY = currentBgPosY;
+  updateBgPreview();
+  el('fixedLinkDisplay').value = `${window.location.origin}${window.location.pathname}`;
   refreshPointerTag();
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+el('copyFixedLinkBtn').addEventListener('click', async () => {
+  const link = el('fixedLinkDisplay').value;
+  try{
+    await navigator.clipboard.writeText(link);
+    setStatus('已複製固定連結！');
+  }catch(e){
+    el('fixedLinkDisplay').select();
+    setStatus('自動複製失敗，已幫你反白，請手動 Ctrl/Cmd+C 複製', true);
+  }
+});
+
 el('setCurrentBtn').addEventListener('click', async () => {
   if(!unlockOrganizer()) return;
-  await fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'setCurrentEvent', event: EVENT_ID })
-  });
-  setStatus('已將固定連結指向這個場次！');
-  refreshPointerTag();
+  try{
+    await setCurrentEventPointer(EVENT_ID);
+    setStatus('已將固定連結指向這個場次！');
+    await refreshPointerTag();
+  }catch(e){
+    setStatus('設定失敗：' + (e && e.message ? e.message : '請檢查網路連線或 Firebase 規則'), true);
+  }
+});
+
+el('clearCurrentBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  if(!confirm('確定要清除固定連結指向嗎？之後大家打開不帶場次代碼的連結，會看到「尚未設定正式場次」的警示，直到你重新設定指向某個場次為止。')) return;
+  try{
+    await db.ref('meta/currentEvent').remove();
+    setStatus('已清除固定連結指向！');
+    await refreshPointerTag();
+  }catch(e){
+    setStatus('清除失敗：' + (e && e.message ? e.message : '請檢查網路連線或 Firebase 規則'), true);
+  }
 });
 
 el('unlockOrganizerBtn').addEventListener('click', () => {
@@ -1276,15 +1395,9 @@ el('createEventBtn').addEventListener('click', async () => {
   el('createEventBtn').disabled = true;
   setStatus('建立場次中…');
   try{
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'saveTitle', event: slug, data: name })
-    });
+    await db.ref(`eventsIndex/${slug}`).set({ title: name, deadline: '' });
     if(setAsCurrent){
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'setCurrentEvent', event: slug })
-      });
+      await setCurrentEventPointer(slug);
     }
     el('eventPanelBody').style.display = 'none';
     el('inpNewEvent').value = '';
@@ -1296,39 +1409,93 @@ el('createEventBtn').addEventListener('click', async () => {
   }
 });
 
-async function loadEventPage(){
-  el('tableWrap').innerHTML = '<div class="empty-state">載入中…</div>';
-  el('volunteerList').innerHTML = '<div class="volunteer-empty">載入中…</div>';
+// ---- 截止日期 ----
 
-  registerCurrentEvent(); // 不等待，不擋畫面顯示
-  const wasDefault = EVENT_ID === 'default';
-  const { resolvedEvent, title, deadline, orders, volunteers } = await loadEventData();
+el('editDeadlineBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  await openEventPanel();
+  el('inpDeadlineInline').focus();
+});
 
-  if(wasDefault && resolvedEvent && resolvedEvent !== 'default'){
-    EVENT_ID = resolvedEvent; // 固定連結背後實際指向的場次代碼
+el('saveDeadlineInlineBtn').addEventListener('click', async () => {
+  const trimmed = el('inpDeadlineInline').value.trim();
+  if(!trimmed){
+    await saveDeadline('');
+    setStatus('已清除截止日期');
+    return;
   }
-  el('eventTag').textContent = wasDefault
-    ? `場次代碼:${EVENT_ID}（透過固定連結）`
-    : `場次代碼:${EVENT_ID}`;
+  const parsed = new Date(`${trimmed}T23:59:59`);
+  if(isNaN(parsed.getTime())){
+    setStatus('日期格式看起來不太對', true);
+    return;
+  }
+  await saveDeadline(parsed.toISOString());
+  setStatus('截止日期已更新！');
+});
 
-  if(title){
-    titleDisplay.textContent = title;
-    titleDisplay.dataset.raw = 'text';
-    isEventConfigured = true;
+let bgPreviewPosX = 50;
+let bgPreviewPosY = 50;
+let isDraggingBg = false;
+let bgDragStart = null;
+
+function updateBgPreview(){
+  const box = el('bgPreviewBox');
+  const url = el('inpBgImage').value.trim();
+  if(url){
+    const safeUrl = url.replace(/'/g, '%27');
+    box.style.backgroundImage = `url('${safeUrl}')`;
+    box.style.backgroundPosition = `${bgPreviewPosX}% ${bgPreviewPosY}%`;
+    box.classList.add('has-image');
   }else{
-    titleDisplay.textContent = '尚未設定場次標題';
-    titleDisplay.dataset.raw = 'placeholder';
-    isEventConfigured = false;
+    box.style.backgroundImage = '';
+    box.classList.remove('has-image');
   }
-
-  currentDeadline = deadline;
-  renderDeadlineTag();
-  applyLockState();
-
-  setOrders(orders);
-  volunteersCache = volunteers;
-  renderVolunteers(volunteers);
 }
+
+function clampPercent(v){
+  return Math.max(0, Math.min(100, v));
+}
+
+const bgPreviewBox = el('bgPreviewBox');
+
+bgPreviewBox.addEventListener('pointerdown', (e) => {
+  if(!el('inpBgImage').value.trim()) return;
+  isDraggingBg = true;
+  bgDragStart = { x: e.clientX, y: e.clientY, posX: bgPreviewPosX, posY: bgPreviewPosY };
+  e.preventDefault();
+});
+
+window.addEventListener('pointermove', (e) => {
+  if(!isDraggingBg || !bgDragStart) return;
+  const rect = bgPreviewBox.getBoundingClientRect();
+  const dxPercent = ((e.clientX - bgDragStart.x) / rect.width) * 100;
+  const dyPercent = ((e.clientY - bgDragStart.y) / rect.height) * 100;
+  bgPreviewPosX = clampPercent(bgDragStart.posX - dxPercent);
+  bgPreviewPosY = clampPercent(bgDragStart.posY - dyPercent);
+  updateBgPreview();
+});
+
+window.addEventListener('pointerup', () => {
+  isDraggingBg = false;
+  bgDragStart = null;
+});
+
+el('inpBgImage').addEventListener('input', updateBgPreview);
+
+el('resetBgPosBtn').addEventListener('click', () => {
+  bgPreviewPosX = 50;
+  bgPreviewPosY = 50;
+  updateBgPreview();
+});
+
+el('saveBgImageBtn').addEventListener('click', async () => {
+  const url = el('inpBgImage').value.trim();
+  const textPos = el('inpTextPos').value;
+  await saveBgImage(url, bgPreviewPosX, bgPreviewPosY, textPos);
+  setStatus(url ? '背景圖片已更新！' : '已清除背景圖片');
+});
+
+// ---- 場次切換（不整頁重載） ----
 
 function resetRegisterForm(){
   el('inpName').value = '';
@@ -1353,64 +1520,30 @@ window.addEventListener('popstate', () => {
   loadEventPage();
 });
 
-async function init(){
-  if(API_URL.includes('PASTE_YOUR')){
-    setStatus('⚠️ 尚未設定 API_URL，請先部署 Apps Script 並貼上網址（見程式碼開頭註解）', true);
-    return;
-  }
-  await loadEventPage();
+async function loadEventPage(){
+  el('tableWrap').innerHTML = '<div class="empty-state">載入中…</div>';
+  el('volunteerList').innerHTML = '<div class="volunteer-empty">載入中…</div>';
 
+  const wasDefault = EVENT_ID === 'default';
+  if(wasDefault){
+    const resolved = await resolveEventId();
+    if(resolved !== 'default') EVENT_ID = resolved;
+  }
+  el('eventTag').textContent = wasDefault
+    ? `場次代碼:${EVENT_ID}（透過固定連結）`
+    : `場次代碼:${EVENT_ID}`;
+
+  ensureEventRegistered(EVENT_ID);
+  attachListeners(EVENT_ID);
+}
+
+async function init(){
+  await loadEventPage();
   setInterval(() => {
     renderDeadlineTag();
     applyLockState();
   }, 30000);
 }
-
-function renderDeadlineTag(){
-  const tag = el('deadlineTag');
-  if(!currentDeadline){
-    tag.textContent = '尚未設定截止時間';
-    tag.classList.remove('passed');
-    return;
-  }
-  const d = new Date(currentDeadline);
-  const label = `登記截止:${d.toLocaleDateString('zh-TW')}`;
-  if(isDeadlinePassed()){
-    tag.textContent = `${label}（已截止）`;
-    tag.classList.add('passed');
-  }else{
-    tag.textContent = label;
-    tag.classList.remove('passed');
-  }
-}
-
-el('editDeadlineBtn').addEventListener('click', async () => {
-  if(!unlockOrganizer()) return;
-  await openEventPanel();
-  el('inpDeadlineInline').focus();
-});
-
-el('saveDeadlineInlineBtn').addEventListener('click', async () => {
-  const trimmed = el('inpDeadlineInline').value.trim();
-  if(!trimmed){
-    currentDeadline = '';
-    renderDeadlineTag();
-    applyLockState();
-    await saveDeadline('');
-    setStatus('已清除截止日期');
-    return;
-  }
-  const parsed = new Date(`${trimmed}T23:59:59`);
-  if(isNaN(parsed.getTime())){
-    setStatus('日期格式看起來不太對', true);
-    return;
-  }
-  currentDeadline = parsed.toISOString();
-  renderDeadlineTag();
-  applyLockState();
-  await saveDeadline(currentDeadline);
-  setStatus('截止日期已更新！');
-});
 
 init();
 </script>
