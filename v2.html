@@ -567,8 +567,26 @@
             <input id="inpBgImage" type="text" placeholder="貼上圖片連結，例如 https://..." />
           </div>
         </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>水平位置</label>
+            <select id="inpBgPosX">
+              <option value="left">靠左</option>
+              <option value="center" selected>置中</option>
+              <option value="right">靠右</option>
+            </select>
+          </div>
+          <div class="field" style="flex:1;">
+            <label>垂直位置</label>
+            <select id="inpBgPosY">
+              <option value="top">靠上</option>
+              <option value="center" selected>置中</option>
+              <option value="bottom">靠下</option>
+            </select>
+          </div>
+        </div>
         <button class="submit-btn" id="saveBgImageBtn" style="margin-top:10px;">更新背景圖片</button>
-        <div class="hint">留空並送出可以清除背景圖片，恢復成預設深色底。圖片需要是可以直接開啟的圖片連結（結尾通常是 .jpg / .png / .webp）。</div>
+        <div class="hint">留空並送出可以清除背景圖片，恢復成預設深色底。圖片需要是可以直接開啟的圖片連結（結尾通常是 .jpg / .png / .webp）。位置設定可以避免人臉被裁到。</div>
       </div>
     </div>
   </div>
@@ -672,6 +690,8 @@ let volunteersCache = [];
 let isEventConfigured = false;
 let currentDeadline = '';
 let currentBgImage = '';
+let currentBgPosX = 'center';
+let currentBgPosY = 'center';
 let isOrganizerMode = false;
 
 function unlockOrganizer(){
@@ -972,15 +992,18 @@ async function saveDeadline(iso){
   await db.ref(`eventsIndex/${EVENT_ID}/deadline`).set(iso || '');
 }
 
-async function saveBgImage(url){
+async function saveBgImage(url, posX, posY){
   await db.ref(`eventsIndex/${EVENT_ID}/bgImage`).set(url || '');
+  await db.ref(`eventsIndex/${EVENT_ID}/bgPosX`).set(posX || 'center');
+  await db.ref(`eventsIndex/${EVENT_ID}/bgPosY`).set(posY || 'center');
 }
 
-function applyStubBackground(url){
+function applyStubBackground(url, posX, posY){
   const stubEl = el('stubEl');
   if(url){
     const safeUrl = url.replace(/'/g, '%27');
-    stubEl.style.background = `linear-gradient(rgba(27,36,48,0.55), rgba(27,36,48,0.78)), url('${safeUrl}') center/cover no-repeat`;
+    const position = `${posX || 'center'} ${posY || 'center'}`;
+    stubEl.style.background = `linear-gradient(rgba(27,36,48,0.55), rgba(27,36,48,0.78)), url('${safeUrl}') ${position}/cover no-repeat`;
   }else{
     stubEl.style.background = '';
   }
@@ -1053,9 +1076,11 @@ function attachListeners(eventId){
     }
     currentDeadline = data.deadline || '';
     currentBgImage = data.bgImage || '';
+    currentBgPosX = data.bgPosX || 'center';
+    currentBgPosY = data.bgPosY || 'center';
     renderDeadlineTag();
     applyLockState();
-    applyStubBackground(currentBgImage);
+    applyStubBackground(currentBgImage, currentBgPosX, currentBgPosY);
   });
 }
 
@@ -1231,6 +1256,8 @@ async function openEventPanel(){
   el('renameEventTag').textContent = EVENT_ID;
   el('inpDeadlineInline').value = currentDeadline ? new Date(currentDeadline).toISOString().slice(0,10) : '';
   el('inpBgImage').value = currentBgImage;
+  el('inpBgPosX').value = currentBgPosX;
+  el('inpBgPosY').value = currentBgPosY;
   refreshPointerTag();
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1320,7 +1347,9 @@ el('saveDeadlineInlineBtn').addEventListener('click', async () => {
 
 el('saveBgImageBtn').addEventListener('click', async () => {
   const url = el('inpBgImage').value.trim();
-  await saveBgImage(url);
+  const posX = el('inpBgPosX').value;
+  const posY = el('inpBgPosY').value;
+  await saveBgImage(url, posX, posY);
   setStatus(url ? '背景圖片已更新！' : '已清除背景圖片');
 });
 
