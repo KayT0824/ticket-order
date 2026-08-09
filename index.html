@@ -1274,9 +1274,15 @@ function renderInfoCard(){
     linksEl.textContent = '未提供';
   }else{
     linksEl.innerHTML = lines.map(link => {
+      let href = null;
       if(/^https?:\/\//i.test(link)){
-        const safeLink = link.replace(/"/g, '%22');
-        return `<a href="${safeLink}" target="_blank" rel="noopener">${escapeHtml(link)}</a>`;
+        href = link;
+      }else if(/^www\./i.test(link) || /^[a-z0-9-]+\.[a-z]{2,}(\/|$)/i.test(link)){
+        href = `https://${link}`;
+      }
+      if(href){
+        const safeHref = href.replace(/"/g, '%22');
+        return `<a href="${safeHref}" target="_blank" rel="noopener">${escapeHtml(link)}</a>`;
       }
       return escapeHtml(link);
     }).join('');
