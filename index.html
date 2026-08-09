@@ -568,30 +568,6 @@
       <h2 style="font-size:13px;">📅 場次</h2>
       <button class="export-btn" id="toggleEventPanelBtn">切換場次</button>
     </div>
-    <div class="full-title-display" id="fullTitleDisplay">尚未設定場次標題</div>
-
-    <div class="card-header-row" style="margin-top:12px;margin-bottom:0;">
-      <div style="font-size:12px;color:var(--ink-soft);font-weight:600;">🎫 活動資訊</div>
-      <button class="export-btn" id="toggleInfoBtn">展開詳情</button>
-    </div>
-    <div id="infoBody" style="display:none;margin-top:10px;">
-      <div class="info-row">
-        <span class="info-label">搶票日期</span>
-        <span class="info-value" id="infoTicketDate">未提供</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">活動地點</span>
-        <span class="info-value" id="infoVenue">未提供</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">門票價格</span>
-        <span class="info-value" id="infoPrice">未提供</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">相關連結</span>
-        <div class="info-value" id="infoLinks">未提供</div>
-      </div>
-    </div>
 
     <div id="eventPanelBody" style="display:none;margin-top:10px;">
       <div class="field">
@@ -713,6 +689,31 @@
         </div>
         <button class="submit-btn" id="saveBgImageBtn" style="margin-top:10px;">更新背景圖片</button>
         <div class="hint">留空並送出可以清除背景圖片，恢復成預設深色底。圖片需要是可以直接開啟的圖片連結（結尾通常是 .jpg / .png / .webp）。</div>
+      </div>
+    </div>
+
+    <div class="full-title-display" id="fullTitleDisplay">尚未設定場次標題</div>
+
+    <div class="card-header-row" style="margin-top:12px;margin-bottom:0;">
+      <div style="font-size:12px;color:var(--ink-soft);font-weight:600;">🎫 活動資訊</div>
+      <button class="export-btn" id="toggleInfoBtn">展開詳情</button>
+    </div>
+    <div id="infoBody" style="display:none;margin-top:10px;">
+      <div class="info-row">
+        <span class="info-label">搶票日期</span>
+        <span class="info-value" id="infoTicketDate">未提供</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">活動地點</span>
+        <span class="info-value" id="infoVenue">未提供</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">門票價格</span>
+        <span class="info-value" id="infoPrice">未提供</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">相關連結</span>
+        <div class="info-value" id="infoLinks">未提供</div>
       </div>
     </div>
   </div>
