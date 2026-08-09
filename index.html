@@ -317,9 +317,10 @@
   }
   .info-row:last-child{border-bottom:none;}
   .info-label{
-    flex:0 0 72px;
+    flex:0 0 92px;
     color:var(--ink-soft);
     font-weight:600;
+    white-space:nowrap;
   }
   .info-value{
     flex:1;
@@ -637,30 +638,36 @@
 
         <div class="field-row">
           <div class="field" style="flex:1;">
-            <label>搶票日期</label>
-            <input id="inpTicketDate" type="text" placeholder="例如 2026/08/10 20:00 開搶" />
+            <label>📅 活動日期</label>
+            <input id="inpEventDate" type="text" placeholder="例如 2026/08/10（六）" />
           </div>
         </div>
         <div class="field-row" style="margin-top:10px;">
           <div class="field" style="flex:1;">
-            <label>活動地點</label>
+            <label>📍 活動地點</label>
             <input id="inpVenue" type="text" placeholder="例如 高雄巨蛋" />
           </div>
         </div>
         <div class="field-row" style="margin-top:10px;">
           <div class="field" style="flex:1;">
-            <label>門票價格</label>
+            <label>⏰ 售票時間</label>
+            <input id="inpTicketDate" type="text" placeholder="例如 2026/08/01 20:00 開賣" />
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>🎫 票價</label>
             <input id="inpTicketPrice" type="text" placeholder="例如 1500 / 2000 / 3000" />
           </div>
         </div>
         <div class="field-row" style="margin-top:10px;">
           <div class="field" style="flex:1;">
-            <label>相關連結（每行一個網址）</label>
+            <label>🔗 售票平台（每行一個網址）</label>
             <textarea id="inpLinks" rows="3" placeholder="https://...&#10;https://..."></textarea>
           </div>
         </div>
         <button class="submit-btn" id="saveInfoBtn" style="margin-top:10px;">更新活動資訊</button>
-        <div class="hint">這四項會顯示在前台「🎫 活動資訊」卡片裡，預設收合、點開才會看到，不會佔用版面。留空的欄位會顯示「未提供」。</div>
+        <div class="hint">這五項會顯示在前台「🎫 活動資訊」卡片裡，預設收合、點開才會看到，不會佔用版面。留空的欄位會顯示「未提供」。</div>
 
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
@@ -700,19 +707,23 @@
     </div>
     <div id="infoBody" style="display:none;margin-top:10px;">
       <div class="info-row">
-        <span class="info-label">搶票日期</span>
-        <span class="info-value" id="infoTicketDate">未提供</span>
+        <span class="info-label">📅 活動日期</span>
+        <span class="info-value" id="infoEventDate">未提供</span>
       </div>
       <div class="info-row">
-        <span class="info-label">活動地點</span>
+        <span class="info-label">📍 活動地點</span>
         <span class="info-value" id="infoVenue">未提供</span>
       </div>
       <div class="info-row">
-        <span class="info-label">門票價格</span>
+        <span class="info-label">⏰ 售票時間</span>
+        <span class="info-value" id="infoTicketDate">未提供</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">🎫 票價</span>
         <span class="info-value" id="infoPrice">未提供</span>
       </div>
       <div class="info-row">
-        <span class="info-label">相關連結</span>
+        <span class="info-label">🔗 售票平台</span>
         <div class="info-value" id="infoLinks">未提供</div>
       </div>
     </div>
@@ -826,6 +837,7 @@ let currentBgPosX = 50;
 let currentBgPosY = 50;
 let currentTextPos = 'center';
 let currentTicketDate = '';
+let currentEventDate = '';
 let currentVenue = '';
 let currentTicketPrice = '';
 let currentLinks = '';
@@ -1233,6 +1245,7 @@ function attachListeners(eventId){
     currentBgPosY = posToPercent(data.bgPosY, true);
     currentTextPos = data.textPos || 'center';
     currentTicketDate = data.ticketDate || '';
+    currentEventDate = data.eventDate || '';
     currentVenue = data.venue || '';
     currentTicketPrice = data.ticketPrice || '';
     currentLinks = data.links || '';
@@ -1244,6 +1257,7 @@ function attachListeners(eventId){
 }
 
 function renderInfoCard(){
+  el('infoEventDate').textContent = currentEventDate || '未提供';
   el('infoTicketDate').textContent = currentTicketDate || '未提供';
   el('infoVenue').textContent = currentVenue || '未提供';
   el('infoPrice').textContent = currentTicketPrice || '未提供';
@@ -1434,6 +1448,7 @@ async function openEventPanel(){
   el('inpRenameTitle').value = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '';
   el('renameEventTag').textContent = EVENT_ID;
   el('inpDeadlineInline').value = currentDeadline ? new Date(currentDeadline).toISOString().slice(0,10) : '';
+  el('inpEventDate').value = currentEventDate;
   el('inpTicketDate').value = currentTicketDate;
   el('inpVenue').value = currentVenue;
   el('inpTicketPrice').value = currentTicketPrice;
@@ -1559,11 +1574,13 @@ el('saveDeadlineInlineBtn').addEventListener('click', async () => {
 });
 
 el('saveInfoBtn').addEventListener('click', async () => {
+  const eventDate = el('inpEventDate').value.trim();
   const ticketDate = el('inpTicketDate').value.trim();
   const venue = el('inpVenue').value.trim();
   const ticketPrice = el('inpTicketPrice').value.trim();
   const links = el('inpLinks').value.trim();
   try{
+    await db.ref(`eventsIndex/${EVENT_ID}/eventDate`).set(eventDate);
     await db.ref(`eventsIndex/${EVENT_ID}/ticketDate`).set(ticketDate);
     await db.ref(`eventsIndex/${EVENT_ID}/venue`).set(venue);
     await db.ref(`eventsIndex/${EVENT_ID}/ticketPrice`).set(ticketPrice);
