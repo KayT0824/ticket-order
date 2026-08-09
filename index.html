@@ -308,6 +308,44 @@
     line-height:1.4;
     word-break:break-word;
   }
+  .info-row{
+    display:flex;
+    gap:12px;
+    padding:8px 0;
+    border-bottom:1px solid var(--line-soft);
+    font-size:14px;
+  }
+  .info-row:last-child{border-bottom:none;}
+  .info-label{
+    flex:0 0 72px;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+  .info-value{
+    flex:1;
+    color:var(--ink);
+    word-break:break-word;
+  }
+  .info-value a{
+    color:var(--gold-deep);
+    text-decoration:underline;
+    display:block;
+    word-break:break-all;
+  }
+  .field textarea{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:15px;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    outline:none;
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    resize:vertical;
+  }
+  .field textarea:focus{border-color:var(--gold-deep);}
   .link-btn{
     background:none;
     border:none;
@@ -531,6 +569,30 @@
       <button class="export-btn" id="toggleEventPanelBtn">切換場次</button>
     </div>
     <div class="full-title-display" id="fullTitleDisplay">尚未設定場次標題</div>
+
+    <div class="card-header-row" style="margin-top:12px;margin-bottom:0;">
+      <div style="font-size:12px;color:var(--ink-soft);font-weight:600;">🎫 活動資訊</div>
+      <button class="export-btn" id="toggleInfoBtn">展開詳情</button>
+    </div>
+    <div id="infoBody" style="display:none;margin-top:10px;">
+      <div class="info-row">
+        <span class="info-label">搶票日期</span>
+        <span class="info-value" id="infoTicketDate">未提供</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">活動地點</span>
+        <span class="info-value" id="infoVenue">未提供</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">門票價格</span>
+        <span class="info-value" id="infoPrice">未提供</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">相關連結</span>
+        <div class="info-value" id="infoLinks">未提供</div>
+      </div>
+    </div>
+
     <div id="eventPanelBody" style="display:none;margin-top:10px;">
       <div class="field">
         <label>切換到現有場次</label>
@@ -594,6 +656,35 @@
         </div>
         <button class="submit-btn" id="saveDeadlineInlineBtn" style="margin-top:10px;">更新截止日期</button>
         <div class="hint">留空並送出可以清除截止日期。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>搶票日期</label>
+            <input id="inpTicketDate" type="text" placeholder="例如 2026/08/10 20:00 開搶" />
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>活動地點</label>
+            <input id="inpVenue" type="text" placeholder="例如 高雄巨蛋" />
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>門票價格</label>
+            <input id="inpTicketPrice" type="text" placeholder="例如 1500 / 2000 / 3000" />
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>相關連結（每行一個網址）</label>
+            <textarea id="inpLinks" rows="3" placeholder="https://...&#10;https://..."></textarea>
+          </div>
+        </div>
+        <button class="submit-btn" id="saveInfoBtn" style="margin-top:10px;">更新活動資訊</button>
+        <div class="hint">這四項會顯示在前台「🎫 活動資訊」卡片裡，預設收合、點開才會看到，不會佔用版面。留空的欄位會顯示「未提供」。</div>
 
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
@@ -733,6 +824,10 @@ let currentBgImage = '';
 let currentBgPosX = 50;
 let currentBgPosY = 50;
 let currentTextPos = 'center';
+let currentTicketDate = '';
+let currentVenue = '';
+let currentTicketPrice = '';
+let currentLinks = '';
 let isOrganizerMode = false;
 
 function unlockOrganizer(){
@@ -1136,10 +1231,35 @@ function attachListeners(eventId){
     currentBgPosX = posToPercent(data.bgPosX, false);
     currentBgPosY = posToPercent(data.bgPosY, true);
     currentTextPos = data.textPos || 'center';
+    currentTicketDate = data.ticketDate || '';
+    currentVenue = data.venue || '';
+    currentTicketPrice = data.ticketPrice || '';
+    currentLinks = data.links || '';
     renderDeadlineTag();
     applyLockState();
     applyStubBackground(currentBgImage, currentBgPosX, currentBgPosY, currentTextPos);
+    renderInfoCard();
   });
+}
+
+function renderInfoCard(){
+  el('infoTicketDate').textContent = currentTicketDate || '未提供';
+  el('infoVenue').textContent = currentVenue || '未提供';
+  el('infoPrice').textContent = currentTicketPrice || '未提供';
+
+  const linksEl = el('infoLinks');
+  const lines = (currentLinks || '').split('\n').map(l => l.trim()).filter(Boolean);
+  if(!lines.length){
+    linksEl.textContent = '未提供';
+  }else{
+    linksEl.innerHTML = lines.map(link => {
+      if(/^https?:\/\//i.test(link)){
+        const safeLink = link.replace(/"/g, '%22');
+        return `<a href="${safeLink}" target="_blank" rel="noopener">${escapeHtml(link)}</a>`;
+      }
+      return escapeHtml(link);
+    }).join('');
+  }
 }
 
 // ---- 表單 ----
@@ -1313,6 +1433,10 @@ async function openEventPanel(){
   el('inpRenameTitle').value = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '';
   el('renameEventTag').textContent = EVENT_ID;
   el('inpDeadlineInline').value = currentDeadline ? new Date(currentDeadline).toISOString().slice(0,10) : '';
+  el('inpTicketDate').value = currentTicketDate;
+  el('inpVenue').value = currentVenue;
+  el('inpTicketPrice').value = currentTicketPrice;
+  el('inpLinks').value = currentLinks;
   el('inpBgImage').value = currentBgImage;
   el('inpTextPos').value = currentTextPos;
   bgPreviewPosX = currentBgPosX;
@@ -1431,6 +1555,30 @@ el('saveDeadlineInlineBtn').addEventListener('click', async () => {
   }
   await saveDeadline(parsed.toISOString());
   setStatus('截止日期已更新！');
+});
+
+el('saveInfoBtn').addEventListener('click', async () => {
+  const ticketDate = el('inpTicketDate').value.trim();
+  const venue = el('inpVenue').value.trim();
+  const ticketPrice = el('inpTicketPrice').value.trim();
+  const links = el('inpLinks').value.trim();
+  try{
+    await db.ref(`eventsIndex/${EVENT_ID}/ticketDate`).set(ticketDate);
+    await db.ref(`eventsIndex/${EVENT_ID}/venue`).set(venue);
+    await db.ref(`eventsIndex/${EVENT_ID}/ticketPrice`).set(ticketPrice);
+    await db.ref(`eventsIndex/${EVENT_ID}/links`).set(links);
+    setStatus('活動資訊已更新！');
+  }catch(e){
+    setStatus('更新失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
+  }
+});
+
+el('toggleInfoBtn').addEventListener('click', () => {
+  const body = el('infoBody');
+  const btn = el('toggleInfoBtn');
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? 'block' : 'none';
+  btn.textContent = isHidden ? '收合詳情' : '展開詳情';
 });
 
 let bgPreviewPosX = 50;
