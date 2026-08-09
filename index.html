@@ -310,6 +310,7 @@
   }
   .info-row{
     display:flex;
+    align-items:flex-start;
     gap:12px;
     padding:8px 0;
     border-bottom:1px solid var(--line-soft);
@@ -321,11 +322,13 @@
     color:var(--ink-soft);
     font-weight:600;
     white-space:nowrap;
+    padding-top:1px;
   }
   .info-value{
     flex:1;
     color:var(--ink);
     word-break:break-word;
+    white-space:pre-line;
   }
   .info-value a{
     color:var(--gold-deep);
@@ -567,7 +570,10 @@
   <div class="card event-panel" id="eventPanelWrap">
     <div class="card-header-row" style="margin-bottom:6px;">
       <h2 style="font-size:13px;">📅 場次</h2>
-      <button class="export-btn" id="toggleEventPanelBtn">切換場次</button>
+      <div>
+        <button class="link-btn" id="unlockOrganizerBtn" style="margin-right:12px;">🔧 主辦人功能</button>
+        <button class="export-btn" id="toggleEventPanelBtn">切換場次</button>
+      </div>
     </div>
 
     <div id="eventPanelBody" style="display:none;margin-top:10px;">
@@ -576,10 +582,6 @@
         <select id="eventSwitcher">
           <option value="">請選擇場次…</option>
         </select>
-      </div>
-
-      <div style="text-align:right;margin-top:10px;">
-        <button class="link-btn" id="unlockOrganizerBtn">🔧 主辦人功能</button>
       </div>
 
       <div id="organizerSection" style="display:none;">
@@ -651,7 +653,7 @@
         <div class="field-row" style="margin-top:10px;">
           <div class="field" style="flex:1;">
             <label>⏰ 售票時間</label>
-            <input id="inpTicketDate" type="text" placeholder="例如 2026/08/01 20:00 開賣" />
+            <textarea id="inpTicketDate" rows="3" placeholder="例如：&#10;會員先行 2026/08/01 20:00&#10;一般開賣 2026/08/03 20:00"></textarea>
           </div>
         </div>
         <div class="field-row" style="margin-top:10px;">
@@ -1501,7 +1503,9 @@ el('clearCurrentBtn').addEventListener('click', async () => {
 });
 
 el('unlockOrganizerBtn').addEventListener('click', () => {
-  unlockOrganizer();
+  if(unlockOrganizer()){
+    openEventPanel();
+  }
 });
 
 el('toggleEventPanelBtn').addEventListener('click', () => {
