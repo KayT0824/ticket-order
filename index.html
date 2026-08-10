@@ -1441,14 +1441,7 @@ async function openEventPanel(){
   const events = await listEvents();
   const switcher = el('eventSwitcher');
   switcher.innerHTML = '<option value="">請選擇場次…</option>' + events.map(ev => {
-    let label;
-    if(!ev.title){
-      label = `${ev.event}（尚未設定標題）`;
-    }else if(ev.title === ev.event){
-      label = ev.title;
-    }else{
-      label = `${ev.title}（${ev.event}）`;
-    }
+    const label = ev.title ? ev.title : `${ev.event}（尚未設定標題）`;
     const selected = ev.event === EVENT_ID ? 'selected' : '';
     return `<option value="${escapeHtml(ev.event)}" ${selected}>${escapeHtml(label)}</option>`;
   }).join('');
