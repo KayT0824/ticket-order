@@ -606,6 +606,12 @@
 
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
+        <div class="hint" style="margin-bottom:8px;">📦 這個場次目前狀態:<strong id="archiveStatusTag">讀取中…</strong></div>
+        <button class="submit-btn" id="toggleArchiveBtn" style="background:var(--ink-soft);">封存這個場次</button>
+        <div class="hint">封存後，這個場次不會出現在「切換到現有場次」清單裡，一般人也搜尋不到，但資料完全保留，之後隨時可以取消封存讓它重新出現。如果有人手上還留著這場的連結，直接打開連結還是看得到（只是不會列在清單上）。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
         <div class="hint" style="margin-bottom:8px;">🔗 固定連結（不帶場次代碼的那個網址）目前指向:<strong id="currentPointerTag">讀取中…</strong></div>
         <div class="field-row" style="margin-bottom:10px;">
           <div class="field" style="flex:1;">
@@ -834,6 +840,7 @@ let currentBgPosY = 50;
 let currentTextPos = 'center';
 let currentTicketDate = '';
 let currentEventDate = '';
+let currentArchived = false;
 let currentVenue = '';
 let currentTicketPrice = '';
 let currentLinks = '';
@@ -1174,7 +1181,8 @@ async function listEvents(){
   return Object.keys(val).map(k => ({
     event: k,
     title: (val[k] && val[k].title) || '',
-    deadline: (val[k] && val[k].deadline) || ''
+    deadline: (val[k] && val[k].deadline) || '',
+    archived: !!(val[k] && val[k].archived)
   }));
 }
 
@@ -1243,10 +1251,12 @@ function attachListeners(eventId){
     currentVenue = data.venue || '';
     currentTicketPrice = data.ticketPrice || '';
     currentLinks = data.links || '';
+    currentArchived = !!data.archived;
     renderDeadlineTag();
     applyLockState();
     applyStubBackground(currentBgImage, currentBgPosX, currentBgPosY, currentTextPos);
     renderInfoCard();
+    renderArchiveStatus();
   });
 }
 
@@ -1440,8 +1450,9 @@ async function openEventPanel(){
   body.style.display = 'block';
   const events = await listEvents();
   const switcher = el('eventSwitcher');
-  switcher.innerHTML = '<option value="">請選擇場次…</option>' + events.map(ev => {
-    const label = ev.title ? ev.title : `${ev.event}（尚未設定標題）`;
+  const visibleEvents = events.filter(ev => !ev.archived || ev.event === EVENT_ID);
+  switcher.innerHTML = '<option value="">請選擇場次…</option>' + visibleEvents.map(ev => {
+    const label = (ev.title ? ev.title : `${ev.event}（尚未設定標題）`) + (ev.archived ? '（已封存）' : '');
     const selected = ev.event === EVENT_ID ? 'selected' : '';
     return `<option value="${escapeHtml(ev.event)}" ${selected}>${escapeHtml(label)}</option>`;
   }).join('');
@@ -1460,7 +1471,20 @@ async function openEventPanel(){
   updateBgPreview();
   el('fixedLinkDisplay').value = `${window.location.origin}${window.location.pathname}`;
   refreshPointerTag();
+  renderArchiveStatus();
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderArchiveStatus(){
+  const tag = el('archiveStatusTag');
+  const btn = el('toggleArchiveBtn');
+  if(currentArchived){
+    tag.textContent = '已封存（不會出現在切換清單裡）';
+    btn.textContent = '取消封存這個場次';
+  }else{
+    tag.textContent = '正常顯示中';
+    btn.textContent = '封存這個場次';
+  }
 }
 
 el('copyFixedLinkBtn').addEventListener('click', async () => {
@@ -1471,6 +1495,17 @@ el('copyFixedLinkBtn').addEventListener('click', async () => {
   }catch(e){
     el('fixedLinkDisplay').select();
     setStatus('自動複製失敗，已幫你反白，請手動 Ctrl/Cmd+C 複製', true);
+  }
+});
+
+el('toggleArchiveBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  const newState = !currentArchived;
+  try{
+    await db.ref(`eventsIndex/${EVENT_ID}/archived`).set(newState);
+    setStatus(newState ? '這個場次已封存，不會再出現在切換清單裡！' : '已取消封存，這個場次會重新出現在清單裡！');
+  }catch(e){
+    setStatus('操作失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
   }
 });
 
