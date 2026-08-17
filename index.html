@@ -1450,9 +1450,9 @@ async function openEventPanel(){
   body.style.display = 'block';
   const events = await listEvents();
   const switcher = el('eventSwitcher');
-  const visibleEvents = events.filter(ev => !ev.archived || ev.event === EVENT_ID);
+  const visibleEvents = events.filter(ev => !ev.archived);
   switcher.innerHTML = '<option value="">請選擇場次…</option>' + visibleEvents.map(ev => {
-    const label = (ev.title ? ev.title : `${ev.event}（尚未設定標題）`) + (ev.archived ? '（已封存）' : '');
+    const label = ev.title ? ev.title : `${ev.event}（尚未設定標題）`;
     const selected = ev.event === EVENT_ID ? 'selected' : '';
     return `<option value="${escapeHtml(ev.event)}" ${selected}>${escapeHtml(label)}</option>`;
   }).join('');
