@@ -1905,6 +1905,15 @@ async function loadEventPage(){
 
 async function loadReminderBanner(){
   try{
+    // 直接重新確認一次「目前這個場次」是否已設定標題，避免跟監聽器的非同步時序打架
+    const titleSnap = await db.ref(`eventsIndex/${EVENT_ID}/title`).once('value');
+    const hasTitle = !!titleSnap.val();
+    if(!hasTitle){
+      // 這個場次本身還沒設定好，優先讓警示條被看到，不要用提醒彈窗蓋住它
+      el('reminderModalOverlay').style.display = 'none';
+      return;
+    }
+
     const events = await listEvents();
     const withDates = events.filter(ev =>
       !ev.archived && ev.event !== 'default' &&
