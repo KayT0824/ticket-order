@@ -54,46 +54,66 @@
     position:relative;
     min-height:150px;
   }
-  .reminder-banner{
-    background:#FFF6E5;
-    border:1px solid #F0D9A0;
-    border-radius:12px;
-    padding:14px 16px;
-    margin-bottom:12px;
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(27,36,48,0.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+    padding:20px;
   }
-  .reminder-header{
+  .modal-box{
+    background:#fff;
+    border-radius:14px;
+    max-width:400px;
+    width:100%;
+    max-height:75vh;
+    overflow-y:auto;
+    padding:18px;
+    box-shadow:0 16px 48px rgba(0,0,0,0.28);
+  }
+  .modal-header{
     display:flex;
     align-items:center;
     justify-content:space-between;
     font-weight:700;
-    font-size:14px;
+    font-size:15px;
     color:var(--gold-deep);
-    margin-bottom:8px;
+    margin-bottom:10px;
   }
   .reminder-close{
     background:none;
     border:none;
-    color:var(--gold-deep);
-    font-size:14px;
+    color:var(--ink-soft);
+    font-size:15px;
     cursor:pointer;
     padding:2px 6px;
     line-height:1;
   }
   .reminder-close:hover{opacity:0.6;}
   .reminder-item{
-    padding:8px 0;
-    border-top:1px solid #F0D9A0;
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+    padding:9px 0;
+    border-top:1px solid var(--line-soft);
   }
   .reminder-item:first-child{border-top:none;}
   .reminder-title{
-    font-weight:700;
+    font-weight:600;
     font-size:13.5px;
     color:var(--ink);
-    margin-bottom:3px;
+    flex:1;
+    min-width:0;
   }
   .reminder-time{
-    font-size:13px;
-    color:var(--ink-soft);
+    font-size:12.5px;
+    color:var(--gold-deep);
+    font-weight:600;
+    text-align:right;
     white-space:pre-line;
   }
   .warn-banner{
@@ -576,15 +596,18 @@
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <div class="reminder-banner" id="reminderBanner" style="display:none;">
-    <div class="reminder-header">
+<div class="modal-overlay" id="reminderModalOverlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
       <span>🔔 近期開票提醒</span>
       <button id="closeReminderBtn" class="reminder-close" aria-label="關閉">✕</button>
     </div>
     <div id="reminderList"></div>
   </div>
+</div>
+
+<div class="wrap">
 
   <div class="warn-banner" id="warnBanner" style="display:none;">
     <div class="warn-text">⚠️ 這個連結還沒有設定正式場次，請先確認你拿到的是不是正確的活動連結</div>
@@ -1805,9 +1828,9 @@ async function loadReminderBanner(){
     const withDates = events.filter(ev =>
       !ev.archived && ev.event !== 'default' && (ev.ticketDate || '').trim()
     );
-    const banner = el('reminderBanner');
+    const overlay = el('reminderModalOverlay');
     if(!withDates.length){
-      banner.style.display = 'none';
+      overlay.style.display = 'none';
       return;
     }
     el('reminderList').innerHTML = withDates.map(ev => `
@@ -1816,14 +1839,20 @@ async function loadReminderBanner(){
         <div class="reminder-time">${escapeHtml(ev.ticketDate)}</div>
       </div>
     `).join('');
-    banner.style.display = 'block';
+    overlay.style.display = 'flex';
   }catch(e){
     // 靜默失敗，不影響主要功能
   }
 }
 
 el('closeReminderBtn').addEventListener('click', () => {
-  el('reminderBanner').style.display = 'none';
+  el('reminderModalOverlay').style.display = 'none';
+});
+
+el('reminderModalOverlay').addEventListener('click', (e) => {
+  if(e.target === e.currentTarget){
+    el('reminderModalOverlay').style.display = 'none';
+  }
 });
 
 async function init(){
