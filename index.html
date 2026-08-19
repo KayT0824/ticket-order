@@ -54,6 +54,48 @@
     position:relative;
     min-height:150px;
   }
+  .reminder-banner{
+    background:#FFF6E5;
+    border:1px solid #F0D9A0;
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:12px;
+  }
+  .reminder-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-weight:700;
+    font-size:14px;
+    color:var(--gold-deep);
+    margin-bottom:8px;
+  }
+  .reminder-close{
+    background:none;
+    border:none;
+    color:var(--gold-deep);
+    font-size:14px;
+    cursor:pointer;
+    padding:2px 6px;
+    line-height:1;
+  }
+  .reminder-close:hover{opacity:0.6;}
+  .reminder-item{
+    padding:8px 0;
+    border-top:1px solid #F0D9A0;
+  }
+  .reminder-item:first-child{border-top:none;}
+  .reminder-title{
+    font-weight:700;
+    font-size:13.5px;
+    color:var(--ink);
+    margin-bottom:3px;
+  }
+  .reminder-time{
+    font-size:13px;
+    color:var(--ink-soft);
+    white-space:pre-line;
+  }
   .warn-banner{
     background:#FBEAE8;
     border:1px solid #F0BDB8;
@@ -535,6 +577,14 @@
 </head>
 <body>
 <div class="wrap">
+
+  <div class="reminder-banner" id="reminderBanner" style="display:none;">
+    <div class="reminder-header">
+      <span>🔔 近期開票提醒</span>
+      <button id="closeReminderBtn" class="reminder-close" aria-label="關閉">✕</button>
+    </div>
+    <div id="reminderList"></div>
+  </div>
 
   <div class="warn-banner" id="warnBanner" style="display:none;">
     <div class="warn-text">⚠️ 這個連結還沒有設定正式場次，請先確認你拿到的是不是正確的活動連結</div>
@@ -1182,7 +1232,9 @@ async function listEvents(){
     event: k,
     title: (val[k] && val[k].title) || '',
     deadline: (val[k] && val[k].deadline) || '',
-    archived: !!(val[k] && val[k].archived)
+    archived: !!(val[k] && val[k].archived),
+    ticketDate: (val[k] && val[k].ticketDate) || '',
+    eventDate: (val[k] && val[k].eventDate) || ''
   }));
 }
 
@@ -1450,7 +1502,7 @@ async function openEventPanel(){
   body.style.display = 'block';
   const events = await listEvents();
   const switcher = el('eventSwitcher');
-  const visibleEvents = events.filter(ev => !ev.archived);
+  const visibleEvents = events.filter(ev => !ev.archived && ev.event !== 'default');
   switcher.innerHTML = '<option value="">請選擇場次…</option>' + visibleEvents.map(ev => {
     const label = ev.title ? ev.title : `${ev.event}（尚未設定標題）`;
     const selected = ev.event === EVENT_ID ? 'selected' : '';
@@ -1747,8 +1799,36 @@ async function loadEventPage(){
   attachListeners(EVENT_ID);
 }
 
+async function loadReminderBanner(){
+  try{
+    const events = await listEvents();
+    const withDates = events.filter(ev =>
+      !ev.archived && ev.event !== 'default' && (ev.ticketDate || '').trim()
+    );
+    const banner = el('reminderBanner');
+    if(!withDates.length){
+      banner.style.display = 'none';
+      return;
+    }
+    el('reminderList').innerHTML = withDates.map(ev => `
+      <div class="reminder-item">
+        <div class="reminder-title">${escapeHtml(ev.title || ev.event)}</div>
+        <div class="reminder-time">${escapeHtml(ev.ticketDate)}</div>
+      </div>
+    `).join('');
+    banner.style.display = 'block';
+  }catch(e){
+    // 靜默失敗，不影響主要功能
+  }
+}
+
+el('closeReminderBtn').addEventListener('click', () => {
+  el('reminderBanner').style.display = 'none';
+});
+
 async function init(){
   await loadEventPage();
+  loadReminderBanner();
   setInterval(() => {
     renderDeadlineTag();
     applyLockState();
