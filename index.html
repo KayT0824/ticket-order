@@ -722,10 +722,43 @@
             <textarea id="inpVenue" rows="2" placeholder="例如 高雄巨蛋"></textarea>
           </div>
         </div>
-        <div class="field-row" style="margin-top:10px;">
-          <div class="field" style="flex:1;">
-            <label>⏰ 售票時間</label>
-            <textarea id="inpTicketDate" rows="3" placeholder="例如：&#10;會員先行 2026/08/01 20:00&#10;一般開賣 2026/08/03 20:00"></textarea>
+        <div style="margin-top:10px;">
+          <label style="font-size:12px;color:var(--ink-soft);font-weight:500;">⏰ 售票時間（第1組必填，第2~4組選填，不需要的留空即可）</label>
+          <div class="field-row" style="margin-top:6px;">
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase1Label" type="text" placeholder="身份類別，如：會員先行（必填）" />
+            </div>
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase1Time" type="text" placeholder="時間，如：2026/08/01 20:00" />
+            </div>
+          </div>
+          <label class="price-check" style="margin-top:6px;">
+            <input type="checkbox" id="inpSalePhase1TBA" />
+            時間尚未公布（前台會顯示「待公布」）
+          </label>
+          <div class="field-row" style="margin-top:12px;">
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase2Label" type="text" placeholder="身份類別，如：一般售票（選填）" />
+            </div>
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase2Time" type="text" placeholder="時間，如：2026/08/03 20:00" />
+            </div>
+          </div>
+          <div class="field-row" style="margin-top:8px;">
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase3Label" type="text" placeholder="身份類別（選填）" />
+            </div>
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase3Time" type="text" placeholder="時間（選填）" />
+            </div>
+          </div>
+          <div class="field-row" style="margin-top:8px;">
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase4Label" type="text" placeholder="身份類別（選填）" />
+            </div>
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase4Time" type="text" placeholder="時間（選填）" />
+            </div>
           </div>
         </div>
         <div class="field-row" style="margin-top:10px;">
@@ -912,6 +945,7 @@ let currentBgPosX = 50;
 let currentBgPosY = 50;
 let currentTextPos = 'center';
 let currentTicketDate = '';
+let currentSalePhases = [];
 let currentEventDate = '';
 let currentArchived = false;
 let currentVenue = '';
@@ -1257,6 +1291,7 @@ async function listEvents(){
     deadline: (val[k] && val[k].deadline) || '',
     archived: !!(val[k] && val[k].archived),
     ticketDate: (val[k] && val[k].ticketDate) || '',
+    salePhases: normalizeSalePhases(val[k] && val[k].salePhases),
     eventDate: (val[k] && val[k].eventDate) || ''
   }));
 }
@@ -1322,6 +1357,7 @@ function attachListeners(eventId){
     currentBgPosY = posToPercent(data.bgPosY, true);
     currentTextPos = data.textPos || 'center';
     currentTicketDate = data.ticketDate || '';
+    currentSalePhases = normalizeSalePhases(data.salePhases);
     currentEventDate = data.eventDate || '';
     currentVenue = data.venue || '';
     currentTicketPrice = data.ticketPrice || '';
@@ -1335,9 +1371,26 @@ function attachListeners(eventId){
   });
 }
 
+function normalizeSalePhases(raw){
+  if(!raw) return [];
+  const list = Array.isArray(raw) ? raw : Object.values(raw);
+  return list
+    .filter(p => p && (p.label || p.time))
+    .map(p => ({ label: p.label || '', time: p.time || '' }));
+}
+
+function formatSalePhases(phases){
+  return phases.map(p => {
+    if(p.label && p.time) return `${p.label}：${p.time}`;
+    return p.label || p.time;
+  }).join('\n');
+}
+
 function renderInfoCard(){
   el('infoEventDate').textContent = currentEventDate || '未提供';
-  el('infoTicketDate').textContent = currentTicketDate || '未提供';
+  el('infoTicketDate').textContent = currentSalePhases.length
+    ? formatSalePhases(currentSalePhases)
+    : (currentTicketDate || '未提供');
   el('infoVenue').textContent = currentVenue || '未提供';
   el('infoPrice').textContent = currentTicketPrice || '未提供';
 
@@ -1535,7 +1588,14 @@ async function openEventPanel(){
   el('renameEventTag').textContent = EVENT_ID;
   el('inpDeadlineInline').value = currentDeadline ? new Date(currentDeadline).toISOString().slice(0,10) : '';
   el('inpEventDate').value = currentEventDate;
-  el('inpTicketDate').value = currentTicketDate;
+  for(let i = 0; i < 4; i++){
+    const phase = currentSalePhases[i] || { label: '', time: '' };
+    el(`inpSalePhase${i+1}Label`).value = phase.label;
+    el(`inpSalePhase${i+1}Time`).value = phase.time === '待公布' ? '' : phase.time;
+  }
+  const phase1TBA = (currentSalePhases[0] || {}).time === '待公布';
+  el('inpSalePhase1TBA').checked = phase1TBA;
+  el('inpSalePhase1Time').disabled = phase1TBA;
   el('inpVenue').value = currentVenue;
   el('inpTicketPrice').value = currentTicketPrice;
   el('inpLinks').value = currentLinks;
@@ -1685,15 +1745,39 @@ el('saveDeadlineInlineBtn').addEventListener('click', async () => {
   setStatus('截止日期已更新！');
 });
 
+el('inpSalePhase1TBA').addEventListener('change', () => {
+  const timeInput = el('inpSalePhase1Time');
+  timeInput.disabled = el('inpSalePhase1TBA').checked;
+  if(el('inpSalePhase1TBA').checked){ timeInput.value = ''; }
+});
+
 el('saveInfoBtn').addEventListener('click', async () => {
   const eventDate = el('inpEventDate').value.trim();
-  const ticketDate = el('inpTicketDate').value.trim();
   const venue = el('inpVenue').value.trim();
   const ticketPrice = el('inpTicketPrice').value.trim();
   const links = el('inpLinks').value.trim();
+
+  const phase1Label = el('inpSalePhase1Label').value.trim();
+  const phase1TBA = el('inpSalePhase1TBA').checked;
+  const phase1Time = phase1TBA ? '待公布' : el('inpSalePhase1Time').value.trim();
+
+  if(!phase1Label && !phase1TBA && !phase1Time){
+    setStatus('請至少填寫第一組售票時間（身份類別或時間），或勾選「時間尚未公布」', true);
+    return;
+  }
+
+  const salePhases = [{ label: phase1Label, time: phase1Time }];
+  for(let i = 2; i <= 4; i++){
+    const label = el(`inpSalePhase${i}Label`).value.trim();
+    const time = el(`inpSalePhase${i}Time`).value.trim();
+    if(label || time){
+      salePhases.push({ label, time });
+    }
+  }
+
   try{
     await db.ref(`eventsIndex/${EVENT_ID}/eventDate`).set(eventDate);
-    await db.ref(`eventsIndex/${EVENT_ID}/ticketDate`).set(ticketDate);
+    await db.ref(`eventsIndex/${EVENT_ID}/salePhases`).set(salePhases);
     await db.ref(`eventsIndex/${EVENT_ID}/venue`).set(venue);
     await db.ref(`eventsIndex/${EVENT_ID}/ticketPrice`).set(ticketPrice);
     await db.ref(`eventsIndex/${EVENT_ID}/links`).set(links);
@@ -1826,19 +1910,22 @@ async function loadReminderBanner(){
   try{
     const events = await listEvents();
     const withDates = events.filter(ev =>
-      !ev.archived && ev.event !== 'default' && (ev.ticketDate || '').trim()
+      !ev.archived && ev.event !== 'default' &&
+      (ev.salePhases.length || (ev.ticketDate || '').trim())
     );
     const overlay = el('reminderModalOverlay');
     if(!withDates.length){
       overlay.style.display = 'none';
       return;
     }
-    el('reminderList').innerHTML = withDates.map(ev => `
+    el('reminderList').innerHTML = withDates.map(ev => {
+      const timeText = ev.salePhases.length ? formatSalePhases(ev.salePhases) : ev.ticketDate;
+      return `
       <div class="reminder-item">
         <div class="reminder-title">${escapeHtml(ev.title || ev.event)}</div>
-        <div class="reminder-time">${escapeHtml(ev.ticketDate)}</div>
-      </div>
-    `).join('');
+        <div class="reminder-time">${escapeHtml(timeText)}</div>
+      </div>`;
+    }).join('');
     overlay.style.display = 'flex';
   }catch(e){
     // 靜默失敗，不影響主要功能
