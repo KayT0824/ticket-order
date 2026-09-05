@@ -872,6 +872,7 @@
       </div>
     </div>
     <button class="submit-btn" id="submitBtn">送出 / 更新我的登記</button>
+    <button class="link-btn" id="cancelEditBtn" style="display:none;margin-top:8px;">✕ 取消編輯，恢復成新增</button>
     <div class="hint">同名會覆蓋成最新的登記內容，之後想改張數或金額直接重填送出即可。</div>
     <div class="status" id="statusMsg"></div>
   </div>
@@ -949,6 +950,7 @@ let currentVenue = '';
 let currentTicketPrice = '';
 let currentLinks = '';
 let isOrganizerMode = false;
+let editingOriginalName = null;
 
 function unlockOrganizer(){
   if(isOrganizerMode) return true;
@@ -1108,7 +1110,10 @@ function renderTable(list){
       priceInput.disabled = !hasPrice;
       priceInput.value = hasPrice ? entry.price : '';
 
-      setStatus(`正在編輯「${name}」的登記，改完按下方送出即可更新`, false);
+      editingOriginalName = entry.name;
+      el('cancelEditBtn').style.display = 'inline-block';
+
+      setStatus(`正在編輯「${name}」的登記，改完按下方送出即可更新（如果改了姓名，會把舊資料一起更新過去，不會留下重複的舊登記）`, false);
       el('inpName').scrollIntoView({ behavior: 'smooth', block: 'center' });
       el('inpQty').focus();
     });
@@ -1438,14 +1443,22 @@ el('submitBtn').addEventListener('click', async () => {
   if(!qty || qty <= 0){ setStatus('請填寫有效的張數', true); return; }
   if(!noPrice && (isNaN(price) || price < 0)){ setStatus('請填寫願付金額，或勾選「不限金額」', true); return; }
 
-  const existing = ordersCache.find(o => o.name === name);
+  const isRename = editingOriginalName && editingOriginalName !== name;
+  const baseEntry = editingOriginalName
+    ? ordersCache.find(o => o.name === editingOriginalName)
+    : ordersCache.find(o => o.name === name);
   const maxOrder = ordersCache.reduce((m,o) => Math.max(m, o.order || 0), 0);
-  const orderVal = existing ? existing.order : maxOrder + 1;
+  const orderVal = baseEntry ? baseEntry.order : maxOrder + 1;
   const newEntry = { name, qty, price: noPrice ? null : price, order: orderVal, ts: Date.now() };
 
   setStatus('送出中…');
   try{
     await upsertOrderAPI(newEntry);
+    if(isRename){
+      await deleteOrderAPI(editingOriginalName);
+    }
+    editingOriginalName = null;
+    el('cancelEditBtn').style.display = 'none';
     setStatus('已送出，感謝登記！');
   }catch(e){
     setStatus('送出失敗，請再試一次', true);
@@ -1870,8 +1883,14 @@ function resetRegisterForm(){
   priceInput.disabled = false;
   noPriceCheck.checked = false;
   el('inpVolunteer').value = '';
+  editingOriginalName = null;
+  el('cancelEditBtn').style.display = 'none';
   setStatus('');
 }
+
+el('cancelEditBtn').addEventListener('click', () => {
+  resetRegisterForm();
+});
 
 async function switchToEvent(newEventId){
   EVENT_ID = newEventId;
