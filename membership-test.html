@@ -439,6 +439,43 @@
     padding:0 16px;
   }
   .bg-preview-box.has-image .bg-preview-hint{display:none;}
+  .review-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 0;
+    border-top:1px solid var(--line-soft);
+  }
+  .review-item:first-child{border-top:none;}
+  .review-item img{
+    width:64px;
+    height:64px;
+    object-fit:cover;
+    border-radius:8px;
+    border:1px solid var(--line-soft);
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .review-item .review-no-img{
+    width:64px;
+    height:64px;
+    border-radius:8px;
+    background:#F2F3F5;
+    color:var(--ink-soft);
+    font-size:11px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    flex-shrink:0;
+  }
+  .review-info{flex:1;min-width:0;}
+  .review-info .rname{font-weight:700;font-size:14px;color:var(--ink);}
+  .review-info .rqty{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .guide-highlight{
+    color:var(--stamp);
+    font-weight:700;
+  }
   .no-price-tag{
     color:var(--ink-soft);
     font-style:italic;
@@ -660,7 +697,18 @@
   </div>
 
   <div style="text-align:right;margin-top:4px;">
+    <button class="link-btn" id="openMembershipReviewBtn" style="margin-right:12px;">🔍 會員資格審核</button>
     <button class="link-btn" id="unlockOrganizerBtn">🔧 主辦人功能</button>
+  </div>
+
+  <div class="modal-overlay" id="reviewModalOverlay" style="display:none;">
+    <div class="modal-box" style="max-width:600px;">
+      <div class="modal-header">
+        <span>🔍 會員資格審核</span>
+        <button id="closeReviewModalBtn" class="reminder-close" aria-label="關閉">✕</button>
+      </div>
+      <div id="reviewList"></div>
+    </div>
   </div>
 
   <div class="card event-panel" id="eventPanelWrap">
@@ -714,7 +762,20 @@
 
         <div class="hint" style="margin-bottom:8px;">🪪 這個場次是否需要上傳會員資格:<strong id="membershipToggleStatusTag">讀取中…</strong></div>
         <button class="submit-btn" id="toggleMembershipBtn" style="background:var(--ink-soft);">開啟會員資格上傳</button>
-        <div class="hint">開啟後，大家填寫登記時必須同時上傳一張會員資格截圖才能送出。圖片存在 Firebase Storage，不會拖慢登記清單的讀取速度；前台清單不會顯示圖片，只有你匯出 Excel 時能看到圖片連結進行審核。</div>
+        <div class="hint">開啟後，大家填寫登記時必須同時上傳一張會員資格截圖才能送出。圖片存在 Firebase Storage，不會拖慢登記清單的讀取速度。</div>
+
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>讓票規範（會顯示在前台「展開說明」裡，大家勾選閱讀前會看到）</label>
+            <textarea id="inpTransferRules" rows="4" placeholder="例如：中籤後請勿加價轉讓、僅限同好互轉、搶到票後請在期限內完成媒合…"></textarea>
+          </div>
+        </div>
+        <button class="submit-btn" id="saveTransferRulesBtn" style="margin-top:10px;background:var(--ink-soft);">更新讓票規範</button>
+        <div class="hint">留空並送出可以清除這段文字，說明裡就只會顯示固定的上傳技術須知。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="hint">🔍 想請人協助審核會員資格，不用給主辦人密碼——請對方在前台點「會員資格審核」，輸入審核密碼即可（目前審核密碼是 <strong id="reviewerPinDisplay"></strong>，可在程式碼裡搜尋 REVIEWER_PIN 修改）。</div>
 
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
@@ -922,11 +983,12 @@
         <button class="export-btn" id="toggleMembershipGuideBtn">展開說明</button>
       </div>
       <div id="membershipGuideBody" style="display:none;margin-top:10px;">
+        <div id="transferRulesBox" style="display:none;background:#FFF6E5;border:1px solid #F0D9A0;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--ink);white-space:pre-line;"></div>
         <div class="hint" style="margin-bottom:0;">
-          • 請上傳會員卡或 App 會員頁面的截圖<br>
-          • 上傳前請自行**馬賽克遮蓋會員編號中間幾碼**，只保留頭尾方便核對<br>
+          • 請上傳 Weverse 會員頁面的截圖<br>
+          • 上傳前請自行<span class="guide-highlight">馬賽克遮蓋會員編號中間幾碼</span>，只保留頭尾各 3 碼方便核對<br>
           • 建議在截圖加註浮水印（例如暱稱＋今天日期），避免圖片被盜用<br>
-          • 檔案格式：JPG，大小限制 1MB 以內（手機截圖通常都在範圍內，若太大請用內建「編輯」功能重新儲存或簡單裁切）<br>
+          • 檔案格式：<span class="guide-highlight">JPG</span>，大小限制 <span class="guide-highlight">1MB 以內</span>（手機截圖通常都在範圍內）<br>
           • 這張圖片只有主辦人在審核/匯出資料時看得到，不會顯示在下方公開的登記清單裡
         </div>
       </div>
@@ -998,6 +1060,8 @@ const MEMBERSHIP_MAX_BYTES = 1 * 1024 * 1024; // 1MB
 
 // ⚠️ 主辦人專用密碼，只用來保護管理功能，改成你自己想用的密碼即可
 const ORGANIZER_PIN = '0824';
+// 協助審核會員資格用的密碼，跟主辦人密碼分開，只能看審核頁面，進不了後台管理
+const REVIEWER_PIN = '5678';
 
 let EVENT_ID = new URLSearchParams(window.location.search).get('event') || 'default';
 
@@ -1026,6 +1090,7 @@ let currentEventDate = '';
 let currentArchived = false;
 let currentPriceDisabled = false;
 let currentRequireMembership = false;
+let currentTransferRules = '';
 let currentVenue = '';
 let currentTicketPrice = '';
 let currentLinks = '';
@@ -1504,6 +1569,7 @@ function attachListeners(eventId){
     currentArchived = !!data.archived;
     currentPriceDisabled = !!data.priceDisabled;
     currentRequireMembership = !!data.requireMembership;
+    currentTransferRules = data.transferRules || '';
     renderDeadlineTag();
     applyLockState();
     applyStubBackground(currentBgImage, currentBgPosX, currentBgPosY, currentTextPos);
@@ -1513,7 +1579,18 @@ function attachListeners(eventId){
     renderPriceToggleStatus();
     renderMembershipFieldState();
     renderMembershipToggleStatus();
+    renderTransferRulesBox();
   });
+}
+
+function renderTransferRulesBox(){
+  const box = el('transferRulesBox');
+  if(currentTransferRules){
+    box.textContent = currentTransferRules;
+    box.style.display = 'block';
+  }else{
+    box.style.display = 'none';
+  }
 }
 
 function renderPriceFieldState(){
@@ -1836,6 +1913,8 @@ async function openEventPanel(){
   renderArchiveStatus();
   renderPriceToggleStatus();
   renderMembershipToggleStatus();
+  el('inpTransferRules').value = currentTransferRules;
+  el('reviewerPinDisplay').textContent = REVIEWER_PIN;
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -1882,6 +1961,17 @@ el('toggleMembershipBtn').addEventListener('click', async () => {
     setStatus(newState ? '已開啟會員資格上傳！' : '已關閉會員資格上傳！');
   }catch(e){
     setStatus('操作失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
+  }
+});
+
+el('saveTransferRulesBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  const rules = el('inpTransferRules').value.trim();
+  try{
+    await db.ref(`eventsIndex/${EVENT_ID}/transferRules`).set(rules);
+    setStatus(rules ? '讓票規範已更新！' : '已清除讓票規範文字！');
+  }catch(e){
+    setStatus('更新失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
   }
 });
 
@@ -2243,6 +2333,54 @@ el('closeReminderBtn').addEventListener('click', () => {
 el('reminderModalOverlay').addEventListener('click', (e) => {
   if(e.target === e.currentTarget){
     el('reminderModalOverlay').style.display = 'none';
+  }
+});
+
+let isReviewerUnlocked = false;
+
+function renderReviewList(){
+  const list = ordersCache;
+  const listEl = el('reviewList');
+  if(!list.length){
+    listEl.innerHTML = '<div class="empty-state">還沒有人登記</div>';
+    return;
+  }
+  listEl.innerHTML = list.map(o => {
+    const thumb = o.membershipUrl
+      ? `<img src="${o.membershipUrl}" loading="lazy" alt="${escapeHtml(o.name)} 的會員截圖" onclick="window.open('${o.membershipUrl}', '_blank')" />`
+      : `<div class="review-no-img">未上傳</div>`;
+    return `
+      <div class="review-item">
+        ${thumb}
+        <div class="review-info">
+          <div class="rname">${escapeHtml(o.name)}</div>
+          <div class="rqty">張數：${o.qty}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+el('openMembershipReviewBtn').addEventListener('click', () => {
+  if(!isReviewerUnlocked){
+    const pin = prompt('請輸入審核密碼：');
+    if(pin === null) return;
+    if(pin !== REVIEWER_PIN && pin !== ORGANIZER_PIN){
+      alert('密碼錯誤');
+      return;
+    }
+    isReviewerUnlocked = true;
+  }
+  renderReviewList();
+  el('reviewModalOverlay').style.display = 'flex';
+});
+
+el('closeReviewModalBtn').addEventListener('click', () => {
+  el('reviewModalOverlay').style.display = 'none';
+});
+
+el('reviewModalOverlay').addEventListener('click', (e) => {
+  if(e.target === e.currentTarget){
+    el('reviewModalOverlay').style.display = 'none';
   }
 });
 
