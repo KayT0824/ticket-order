@@ -1,0 +1,2262 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>購票登記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF1F6;
+    --card:#FFFFFF;
+    --ink:#1B2430;
+    --ink-soft:#5B6472;
+    --gold:#E8A23D;
+    --gold-deep:#C97F1F;
+    --stamp:#C1443C;
+    --line:#C9CDD3;
+    --line-soft:#DEE1E6;
+  }
+  *{box-sizing:border-box;}
+  html{
+    overflow-x:hidden;
+    width:100%;
+  }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    width:100%;
+  }
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:20px 16px 60px;
+  }
+
+  /* ---- Ticket stub header (signature element) ---- */
+  .stub{
+    display:flex;
+    align-items:center;
+    background:var(--ink);
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 8px 24px rgba(27,36,48,0.18);
+    position:relative;
+    min-height:150px;
+  }
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(27,36,48,0.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+    padding:20px;
+  }
+  .modal-box{
+    background:#fff;
+    border-radius:14px;
+    max-width:400px;
+    width:100%;
+    max-height:75vh;
+    overflow-y:auto;
+    padding:18px;
+    box-shadow:0 16px 48px rgba(0,0,0,0.28);
+  }
+  .modal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-weight:700;
+    font-size:15px;
+    color:var(--gold-deep);
+    margin-bottom:10px;
+  }
+  .reminder-close{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:15px;
+    cursor:pointer;
+    padding:2px 6px;
+    line-height:1;
+  }
+  .reminder-close:hover{opacity:0.6;}
+  .reminder-item{
+    padding:10px 0;
+    border-top:1px solid var(--line-soft);
+  }
+  .reminder-item:first-child{border-top:none;}
+  .reminder-title{
+    font-weight:700;
+    font-size:13.5px;
+    color:var(--ink);
+    margin-bottom:5px;
+    word-break:break-word;
+  }
+  .reminder-time{
+    font-size:12.5px;
+    color:var(--gold-deep);
+    font-weight:600;
+    white-space:pre-line;
+    line-height:1.7;
+    word-break:break-word;
+  }
+  .warn-banner{
+    background:#FBEAE8;
+    border:1px solid #F0BDB8;
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .warn-text{
+    color:var(--stamp);
+    font-size:13.5px;
+    font-weight:600;
+    flex:1;
+    min-width:200px;
+  }
+  .warn-btn{
+    background:var(--stamp);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:9px 14px;
+    font-size:13px;
+    font-weight:600;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .warn-btn:hover{background:#A6392F;}
+  .form-locked{
+    opacity:0.45;
+    pointer-events:none;
+  }
+  .stub-main{
+    flex:1;
+    padding:16px 20px;
+    min-width:0;
+    background:linear-gradient(to right, rgba(20,26,35,0.68) 0%, rgba(20,26,35,0.5) 65%, rgba(20,26,35,0.15) 100%);
+  }
+  .stub-eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:clamp(9px, 2.4vw, 11px);
+    letter-spacing:0.14em;
+    color:var(--gold);
+    text-transform:uppercase;
+    margin-bottom:6px;
+    text-shadow:0 1px 4px rgba(0,0,0,0.5);
+  }
+  .stub-title{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:clamp(15px, 4.3vw, 20px);
+    color:#fff;
+    line-height:1.28;
+    word-break:break-word;
+    text-shadow:0 1px 3px rgba(0,0,0,0.6), 0 2px 10px rgba(0,0,0,0.5);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .stub-divider{
+    align-self:stretch;
+    width:0;
+    border-left:2px dashed rgba(255,255,255,0.25);
+    position:relative;
+  }
+  .stub-divider::before,.stub-divider::after{
+    content:'';
+    position:absolute;
+    left:-9px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--paper);
+  }
+  .stub-divider::before{top:-9px;}
+  .stub-divider::after{bottom:-9px;}
+  .stub-counter{
+    width:120px;
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    gap:8px;
+  }
+  .counter-block .num{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:24px;
+    color:var(--gold);
+    line-height:1;
+    text-shadow:0 1px 6px rgba(0,0,0,0.4);
+  }
+  .counter-block .lbl{
+    font-size:10px;
+    color:rgba(255,255,255,0.7);
+    letter-spacing:0.08em;
+    margin-top:4px;
+    text-shadow:0 1px 4px rgba(0,0,0,0.4);
+  }
+
+  /* ---- Deadline / event-code note (moved off the banner, plain area above the form) ---- */
+  .deadline-note{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+  }
+  .deadline-note .deadline-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .deadline-note .deadline-tag.passed{
+    color:var(--stamp);
+    font-weight:600;
+  }
+  .deadline-note .stub-edit{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:12px;
+    cursor:pointer;
+    padding:0;
+    font-family:'Inter',sans-serif;
+    text-decoration:underline;
+  }
+  .deadline-note .stub-edit:hover{color:var(--gold-deep);}
+  .deadline-note .event-tag-inline{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+
+  @media (max-width:380px){
+    .stub-main{padding:14px 14px;}
+    .stub-counter{width:104px;padding:16px 10px;}
+    .counter-block .num{font-size:21px;}
+  }
+
+  /* ---- Form card ---- */
+  .card{
+    background:var(--card);
+    border-radius:14px;
+    padding:20px;
+    margin-top:16px;
+    box-shadow:0 1px 3px rgba(27,36,48,0.06);
+    border:1px solid var(--line-soft);
+  }
+  .card h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15px;
+    margin:0 0 14px;
+    color:var(--ink);
+  }
+  .field-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:0;
+  }
+  .field label{
+    font-size:12px;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .field input{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:15px;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    outline:none;
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+  }
+  .field input:focus{border-color:var(--gold-deep);}
+  .field select{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:15px;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    outline:none;
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    max-width:100%;
+    background:#fff;
+  }
+  .field.name{flex:1.4;}
+  .field.qty{flex:1;}
+  .field.price{flex:1.3;}
+  @media (max-width:480px){
+    .field-row{
+      flex-direction:column;
+    }
+    .field.name, .field.qty, .field.price{
+      flex:1 1 auto;
+      width:100%;
+    }
+  }
+  .price-check{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    color:var(--ink-soft);
+    font-weight:500;
+    cursor:pointer;
+  }
+  .price-check input{width:auto;}
+  .field input:disabled{background:#F2F3F5;color:var(--ink-soft);cursor:not-allowed;}
+  .card-header-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  .card-header-row h2{margin:0;}
+  .export-btn{
+    background:none;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:7px 12px;
+    font-size:12.5px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .export-btn:hover{border-color:var(--gold-deep);color:var(--gold-deep);}
+  .info-row{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    padding:8px 0;
+    border-bottom:1px solid var(--line-soft);
+    font-size:14px;
+  }
+  .info-row:last-child{border-bottom:none;}
+  .info-label{
+    flex:0 0 92px;
+    color:var(--ink-soft);
+    font-weight:600;
+    white-space:nowrap;
+    padding-top:1px;
+  }
+  .info-value{
+    flex:1;
+    color:var(--ink);
+    word-break:break-word;
+    white-space:pre-line;
+  }
+  .info-value a{
+    color:var(--gold-deep);
+    text-decoration:underline;
+    display:block;
+    word-break:break-all;
+  }
+  .field textarea{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:15px;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    outline:none;
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    resize:vertical;
+  }
+  .field textarea:focus{border-color:var(--gold-deep);}
+  .link-btn{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:12px;
+    cursor:pointer;
+    padding:4px 0;
+    text-decoration:underline;
+    font-family:'Inter',sans-serif;
+  }
+  .link-btn:hover{color:var(--gold-deep);}
+  .bg-preview-box{
+    margin-top:10px;
+    height:130px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background-color:#222430;
+    background-size:cover;
+    background-repeat:no-repeat;
+    cursor:grab;
+    touch-action:none;
+    user-select:none;
+    -webkit-user-select:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .bg-preview-box:active{cursor:grabbing;}
+  .bg-preview-box .bg-preview-hint{
+    color:rgba(255,255,255,0.55);
+    font-size:12px;
+    pointer-events:none;
+    text-align:center;
+    padding:0 16px;
+  }
+  .bg-preview-box.has-image .bg-preview-hint{display:none;}
+  .no-price-tag{
+    color:var(--ink-soft);
+    font-style:italic;
+    font-family:'Inter',sans-serif;
+  }
+  .status-summary{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  .summary-chip{
+    font-size:12px;
+    font-weight:600;
+    padding:6px 10px;
+    border-radius:999px;
+  }
+  .chip-got{background:#E3F4E8;color:#1E7A3C;}
+  .chip-need{background:#FBEAE8;color:var(--stamp);}
+  .chip-pending{background:#F0F1F3;color:var(--ink-soft);}
+  .status-btn{
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:5px 10px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+    background:#fff;
+    color:var(--ink-soft);
+  }
+  .status-btn.status-got{background:#E3F4E8;border-color:#BEE4C9;color:#1E7A3C;}
+  .status-btn.status-need{background:#FBEAE8;border-color:#F0BDB8;color:var(--stamp);}
+  tr.row-got{background:#F6FBF7;}
+  tr.row-need{background:#FEF6F5;}
+  .volunteer-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;
+  }
+  .volunteer-chip{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:#FBF0DC;
+    border:1px solid #EFD9AC;
+    color:var(--gold-deep);
+    border-radius:999px;
+    padding:6px 10px 6px 14px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .volunteer-chip button{
+    background:none;
+    border:none;
+    color:var(--gold-deep);
+    cursor:pointer;
+    font-size:13px;
+    padding:0 2px;
+    line-height:1;
+    opacity:0.6;
+  }
+  .volunteer-chip button:hover{opacity:1;}
+  .volunteer-empty{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+  .submit-btn{
+    margin-top:14px;
+    width:100%;
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:12px;
+    font-size:15px;
+    font-weight:600;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+    transition:background 0.15s ease;
+  }
+  .submit-btn:hover{background:#2B3646;}
+  .submit-btn:disabled{opacity:0.5;cursor:default;}
+  .hint{font-size:12px;color:var(--ink-soft);margin-top:8px;}
+
+  /* ---- Table ---- */
+  .list-card{margin-top:16px;}
+  .table-scroll{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    margin:0 -20px;
+    padding:0 20px;
+  }
+  table{width:100%;min-width:520px;border-collapse:collapse;}
+  thead th{
+    text-align:left;
+    font-size:11px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    padding:0 8px 10px;
+    border-bottom:1px solid var(--line-soft);
+    font-weight:600;
+  }
+  thead th.num-col{text-align:right;}
+  tbody td{
+    padding:12px 8px;
+    border-bottom:1px solid var(--line-soft);
+    font-size:14.5px;
+  }
+  tbody td.num-col{text-align:right;font-family:'IBM Plex Mono',monospace;}
+  tbody tr:last-child td{border-bottom:none;}
+  .name-cell{font-weight:600;}
+  .del-btn{
+    background:none;border:none;color:var(--ink-soft);
+    cursor:pointer;font-size:13px;padding:4px 6px;border-radius:6px;
+  }
+  .del-btn:hover{color:var(--stamp);background:#FBEAE8;}
+  .edit-btn{
+    background:none;border:none;color:var(--gold-deep);
+    cursor:pointer;font-size:13px;padding:4px 6px;border-radius:6px;
+  }
+  .edit-btn:hover{background:#FBF0DC;}
+  .rank-cell{width:1%;white-space:nowrap;}
+  .rank-controls{
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .rank-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:13px;
+    color:var(--ink-soft);
+    min-width:16px;
+    text-align:center;
+  }
+  .move-btn{
+    background:none;
+    border:1px solid var(--line-soft);
+    border-radius:5px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-size:10px;
+    line-height:1;
+    padding:4px 5px;
+  }
+  .move-btn:hover:not(:disabled){border-color:var(--gold-deep);color:var(--gold-deep);}
+  .move-btn:disabled{opacity:0.25;cursor:default;}
+  .empty-state{
+    text-align:center;
+    padding:36px 16px;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+  .totals{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#F7F1E4;
+    border-radius:10px;
+    padding:14px 16px;
+    margin-top:14px;
+  }
+  .totals .t-item{text-align:center;flex:1;}
+  .totals .t-item .v{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:18px;
+    color:var(--gold-deep);
+  }
+  .totals .t-item .l{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .status{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+  .status.err{color:var(--stamp);}
+</style>
+</head>
+<body>
+
+<div class="modal-overlay" id="reminderModalOverlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>🔔 近期開票提醒</span>
+      <button id="closeReminderBtn" class="reminder-close" aria-label="關閉">✕</button>
+    </div>
+    <div id="reminderList"></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="warn-banner" id="warnBanner" style="display:none;">
+    <div class="warn-text">⚠️ 這個連結還沒有設定正式場次，請先確認你拿到的是不是正確的活動連結</div>
+    <button class="warn-btn" id="warnSwitchBtn">切換到正確場次</button>
+  </div>
+
+  <div class="stub" id="stubEl">
+    <div class="stub-main">
+      <div class="stub-eyebrow">團體購票登記</div>
+      <div id="titleDisplay" class="stub-title">尚未設定場次標題</div>
+    </div>
+    <div class="stub-divider"></div>
+    <div class="stub-counter">
+      <div class="counter-block">
+        <div class="num" id="totalQtyNum">0</div>
+        <div class="lbl">總張數</div>
+      </div>
+      <div class="counter-block">
+        <div class="num" id="totalPeopleNum">0</div>
+        <div class="lbl">登記人數</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:right;margin-top:4px;">
+    <button class="link-btn" id="unlockOrganizerBtn">🔧 主辦人功能</button>
+  </div>
+
+  <div class="card event-panel" id="eventPanelWrap">
+    <div class="card-header-row" style="margin-bottom:6px;">
+      <h2 style="font-size:13px;">📅 場次</h2>
+      <button class="export-btn" id="toggleEventPanelBtn">切換場次</button>
+    </div>
+
+    <div id="eventPanelBody" style="display:none;margin-top:10px;">
+      <div class="field">
+        <label>切換到現有場次</label>
+        <select id="eventSwitcher">
+          <option value="">請選擇場次…</option>
+        </select>
+      </div>
+
+      <div id="organizerSection" style="display:none;">
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>建立新場次(輸入名稱)</label>
+            <input id="inpNewEvent" type="text" placeholder="例如 0801演唱會" />
+          </div>
+        </div>
+        <button class="submit-btn" id="createEventBtn" style="margin-top:10px;">建立並前往新場次</button>
+        <label class="price-check" style="margin-top:8px;">
+          <input type="checkbox" id="inpSetAsCurrent" checked />
+          同時把固定連結指向這個新場次（建議勾選）
+        </label>
+        <div class="hint">建立後會自動產生新連結並切換過去，之後把新連結分享出去即可，舊場次資料不會受影響。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>重新命名「目前這個場次」的標題</label>
+            <input id="inpRenameTitle" type="text" placeholder="輸入新的場次標題" />
+          </div>
+        </div>
+        <button class="submit-btn" id="renameTitleBtn" style="margin-top:10px;background:var(--gold-deep);">更新目前場次標題</button>
+        <div class="hint">只會更改你現在瀏覽的這個場次（場次代碼:<span id="renameEventTag"></span>），不會建立新連結。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="hint" style="margin-bottom:8px;">💰 這個場次的金額欄位:<strong id="priceToggleStatusTag">讀取中…</strong></div>
+        <button class="submit-btn" id="togglePriceFieldBtn" style="background:var(--ink-soft);">關閉金額欄位</button>
+        <div class="hint">關閉後，前台登記表單不會出現「單張願付金額」欄位，大家送出登記時一律自動視為「不限金額」，適合整場都不需要討論金額的場次。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="hint" style="margin-bottom:8px;">🪪 這個場次是否需要上傳會員資格:<strong id="membershipToggleStatusTag">讀取中…</strong></div>
+        <button class="submit-btn" id="toggleMembershipBtn" style="background:var(--ink-soft);">開啟會員資格上傳</button>
+        <div class="hint">開啟後，大家填寫登記時必須同時上傳一張會員資格截圖才能送出。圖片存在 Firebase Storage，不會拖慢登記清單的讀取速度；前台清單不會顯示圖片，只有你匯出 Excel 時能看到圖片連結進行審核。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="hint" style="margin-bottom:8px;">📦 這個場次目前狀態:<strong id="archiveStatusTag">讀取中…</strong></div>
+        <button class="submit-btn" id="toggleArchiveBtn" style="background:var(--ink-soft);">封存這個場次</button>
+        <div class="hint">封存後，這個場次不會出現在「切換到現有場次」清單裡，一般人也搜尋不到，但資料完全保留，之後隨時可以取消封存讓它重新出現。如果有人手上還留著這場的連結，直接打開連結還是看得到（只是不會列在清單上）。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="hint" style="margin-bottom:8px;">🔗 固定連結（不帶場次代碼的那個網址）目前指向:<strong id="currentPointerTag">讀取中…</strong></div>
+        <div class="field-row" style="margin-bottom:10px;">
+          <div class="field" style="flex:1;">
+            <label>固定連結網址（可直接複製分享）</label>
+            <input id="fixedLinkDisplay" type="text" readonly />
+          </div>
+        </div>
+        <button class="submit-btn" id="copyFixedLinkBtn" style="margin-bottom:10px;">複製固定連結</button>
+        <button class="submit-btn" id="setCurrentBtn" style="background:var(--stamp);">把固定連結指向「目前這個場次」</button>
+        <div class="hint">設定後，任何人打開不帶場次代碼的固定連結（例如放在共用夾裡的那個），都會自動看到這個場次，不用更換分享出去的連結。</div>
+        <button class="link-btn" id="clearCurrentBtn" style="margin-top:8px;">清除固定連結指向（恢復成未設定狀態）</button>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>設定截止日期</label>
+            <input id="inpDeadlineInline" type="date" />
+          </div>
+        </div>
+        <button class="submit-btn" id="saveDeadlineInlineBtn" style="margin-top:10px;">更新截止日期</button>
+        <div class="hint">留空並送出可以清除截止日期。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>📅 活動日期</label>
+            <textarea id="inpEventDate" rows="2" placeholder="例如 2026/08/10（六）"></textarea>
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>📍 活動地點</label>
+            <textarea id="inpVenue" rows="2" placeholder="例如 高雄巨蛋"></textarea>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <label style="font-size:12px;color:var(--ink-soft);font-weight:500;">⏰ 售票時間（第1組必填，第2~4組選填，不需要的留空即可）</label>
+          <div class="field-row" style="margin-top:6px;">
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase1Label" type="text" placeholder="身份類別，如：會員先行（必填）" />
+            </div>
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase1Time" type="text" placeholder="時間，如：2026/08/01 20:00" />
+            </div>
+          </div>
+          <label class="price-check" style="margin-top:6px;">
+            <input type="checkbox" id="inpSalePhase1TBA" />
+            時間尚未公布（前台會顯示「待公布」）
+          </label>
+          <div class="field-row" style="margin-top:12px;">
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase2Label" type="text" placeholder="身份類別，如：一般售票（選填）" />
+            </div>
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase2Time" type="text" placeholder="時間，如：2026/08/03 20:00" />
+            </div>
+          </div>
+          <div class="field-row" style="margin-top:8px;">
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase3Label" type="text" placeholder="身份類別（選填）" />
+            </div>
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase3Time" type="text" placeholder="時間（選填）" />
+            </div>
+          </div>
+          <div class="field-row" style="margin-top:8px;">
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase4Label" type="text" placeholder="身份類別（選填）" />
+            </div>
+            <div class="field" style="flex:1;">
+              <input id="inpSalePhase4Time" type="text" placeholder="時間（選填）" />
+            </div>
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>🎫 票價</label>
+            <textarea id="inpTicketPrice" rows="2" placeholder="例如 1500 / 2000 / 3000"></textarea>
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>🔗 售票平台（每行一個網址）</label>
+            <textarea id="inpLinks" rows="3" placeholder="https://...&#10;https://..."></textarea>
+          </div>
+        </div>
+        <button class="submit-btn" id="saveInfoBtn" style="margin-top:10px;">更新活動資訊</button>
+        <div class="hint">這五項會顯示在前台「🎫 活動資訊」卡片裡，預設收合、點開才會看到，不會佔用版面。留空的欄位會顯示「未提供」。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>票根背景圖片網址</label>
+            <input id="inpBgImage" type="text" placeholder="貼上圖片連結，例如 https://..." />
+          </div>
+        </div>
+        <div class="hint" style="margin-top:8px;">貼上網址後，在下方預覽圖用滑鼠拖曳（手機用手指拖曳）調整位置，讓臉對齊在最適當的地方。</div>
+        <div id="bgPreviewBox" class="bg-preview-box">
+          <div class="bg-preview-hint">貼上圖片網址後可拖曳這裡調整位置</div>
+        </div>
+        <div style="text-align:right;margin-top:6px;">
+          <button class="link-btn" id="resetBgPosBtn">重設為置中</button>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>文字垂直位置（避開臉部）</label>
+            <select id="inpTextPos">
+              <option value="top">靠上</option>
+              <option value="center" selected>置中</option>
+              <option value="bottom">靠下</option>
+            </select>
+          </div>
+        </div>
+        <button class="submit-btn" id="saveBgImageBtn" style="margin-top:10px;">更新背景圖片</button>
+        <div class="hint">留空並送出可以清除背景圖片，恢復成預設深色底。圖片需要是可以直接開啟的圖片連結（結尾通常是 .jpg / .png / .webp）。</div>
+      </div>
+    </div>
+
+    <div class="card-header-row" style="margin-top:12px;margin-bottom:0;">
+      <div style="font-size:12px;color:var(--ink-soft);font-weight:600;">🎫 活動資訊</div>
+      <div>
+        <button class="link-btn" id="editInfoBtn" style="margin-right:10px;">編輯</button>
+        <button class="export-btn" id="toggleInfoBtn">展開詳情</button>
+      </div>
+    </div>
+    <div id="infoBody" style="display:none;margin-top:10px;">
+      <div class="info-row">
+        <span class="info-label">📅 活動日期</span>
+        <span class="info-value" id="infoEventDate">未提供</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">📍 活動地點</span>
+        <span class="info-value" id="infoVenue">未提供</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">⏰ 售票時間</span>
+        <span class="info-value" id="infoTicketDate">未提供</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">🎫 票價</span>
+        <span class="info-value" id="infoPrice">未提供</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">🔗 售票平台</span>
+        <div class="info-value" id="infoLinks">未提供</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="volunteerCard">
+    <h2>🙋 自願幫忙搶票</h2>
+    <div class="field-row">
+      <div class="field name" style="flex:1;">
+        <label>姓名</label>
+        <input id="inpVolunteer" type="text" placeholder="有空幫忙搶票就填這裡" />
+      </div>
+    </div>
+    <button class="submit-btn" id="volunteerBtn" style="background:var(--gold-deep);">我也要幫忙搶票</button>
+    <div id="volunteerList" class="volunteer-list"></div>
+  </div>
+
+  <div class="card" id="registerCard">
+    <div class="deadline-note">
+      <span class="deadline-tag" id="deadlineTag">尚未設定截止時間</span>
+      <button class="stub-edit" id="editDeadlineBtn" style="display:none;">設定截止時間🔒</button>
+      <span class="event-tag-inline" id="eventTag" style="display:none;"></span>
+    </div>
+    <h2>填寫我的登記</h2>
+    <div class="field-row">
+      <div class="field name">
+        <label>姓名</label>
+        <input id="inpName" type="text" placeholder="你的名字" />
+      </div>
+      <div class="field qty">
+        <label>張數</label>
+        <input id="inpQty" type="number" min="1" placeholder="2" />
+      </div>
+      <div class="field price" id="priceFieldWrap">
+        <label>單張願付金額</label>
+        <input id="inpPrice" type="number" min="0" placeholder="1500" />
+        <label class="price-check">
+          <input type="checkbox" id="inpNoPrice" />
+          不限金額，有票就好
+        </label>
+      </div>
+    </div>
+
+    <div id="membershipWrap" style="display:none;">
+      <div style="height:1px;background:var(--line-soft);margin:14px 0;"></div>
+
+      <div class="card-header-row" style="margin-bottom:0;">
+        <div style="font-size:12px;color:var(--ink-soft);font-weight:600;">📋 會員資格上傳須知</div>
+        <button class="export-btn" id="toggleMembershipGuideBtn">展開說明</button>
+      </div>
+      <div id="membershipGuideBody" style="display:none;margin-top:10px;">
+        <div class="hint" style="margin-bottom:0;">
+          • 請上傳會員卡或 App 會員頁面的截圖<br>
+          • 上傳前請自行**馬賽克遮蓋會員編號中間幾碼**，只保留頭尾方便核對<br>
+          • 建議在截圖加註浮水印（例如暱稱＋今天日期），避免圖片被盜用<br>
+          • 檔案格式：JPG，大小限制 1MB 以內（手機截圖通常都在範圍內，若太大請用內建「編輯」功能重新儲存或簡單裁切）<br>
+          • 這張圖片只有主辦人在審核/匯出資料時看得到，不會顯示在下方公開的登記清單裡
+        </div>
+      </div>
+      <label class="price-check" style="margin-top:10px;">
+        <input type="checkbox" id="inpMembershipAck" />
+        我已閱讀以上上傳須知
+      </label>
+
+      <div class="field-row" style="margin-top:10px;">
+        <div class="field" style="flex:1;">
+          <label>上傳會員資格截圖（JPG，1MB 以內）</label>
+          <input id="inpMembershipFile" type="file" accept="image/jpeg,image/jpg" disabled />
+        </div>
+      </div>
+      <div class="hint" id="membershipFileHint"></div>
+    </div>
+
+    <button class="submit-btn" id="submitBtn">送出 / 更新我的登記</button>
+    <button class="link-btn" id="cancelEditBtn" style="display:none;margin-top:8px;">✕ 取消編輯，恢復成新增</button>
+    <div class="hint">同名會覆蓋成最新的登記內容，之後想改張數或金額直接重填送出即可。</div>
+    <div class="status" id="statusMsg"></div>
+  </div>
+
+  <div class="card list-card">
+    <div class="card-header-row">
+      <h2>大家的登記</h2>
+      <button class="export-btn" id="exportBtn">匯出 Excel</button>
+    </div>
+    <div id="statusSummary" class="status-summary" style="display:none;"></div>
+    <div id="tableWrap"><div class="empty-state">載入中…</div></div>
+    <div class="totals">
+      <div class="t-item">
+        <div class="v" id="sumQty">0</div>
+        <div class="l">總張數</div>
+      </div>
+      <div class="t-item">
+        <div class="v" id="sumAmount">$0</div>
+        <div class="l">總金額</div>
+      </div>
+      <div class="t-item">
+        <div class="v" id="sumPeople">0</div>
+        <div class="l">人數</div>
+      </div>
+    </div>
+    <div class="hint" id="unpricedNote" style="text-align:center;margin-top:6px;"></div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script>
+// ---- Firebase 設定與初始化 ----
+const firebaseConfig = {
+  apiKey: "AIzaSyAg4Q2iDBwLEZrm3aAN_veP_CSdi0iN-Cg",
+  authDomain: "ticket-order.firebaseapp.com",
+  databaseURL: "https://ticket-order-default-rtdb.firebaseio.com",
+  projectId: "ticket-order",
+  storageBucket: "ticket-order.firebasestorage.app",
+  messagingSenderId: "804053169904",
+  appId: "1:804053169904:web:45f9583b309ed8216c3435"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const storage = firebase.storage();
+
+const MEMBERSHIP_MAX_BYTES = 1 * 1024 * 1024; // 1MB
+
+// ⚠️ 主辦人專用密碼，只用來保護管理功能，改成你自己想用的密碼即可
+const ORGANIZER_PIN = '0824';
+
+let EVENT_ID = new URLSearchParams(window.location.search).get('event') || 'default';
+
+function sanitizeKey(str){
+  return encodeURIComponent(str).replace(/\./g, '%2E');
+}
+
+function buildEventUrl(eventId){
+  const url = new URL(window.location.href);
+  url.searchParams.set('event', eventId);
+  return url.toString();
+}
+
+const el = (id) => document.getElementById(id);
+let ordersCache = [];
+let volunteersCache = [];
+let isEventConfigured = false;
+let currentDeadline = '';
+let currentBgImage = '';
+let currentBgPosX = 50;
+let currentBgPosY = 50;
+let currentTextPos = 'center';
+let currentTicketDate = '';
+let currentSalePhases = [];
+let currentEventDate = '';
+let currentArchived = false;
+let currentPriceDisabled = false;
+let currentRequireMembership = false;
+let currentVenue = '';
+let currentTicketPrice = '';
+let currentLinks = '';
+let isOrganizerMode = false;
+let editingOriginalName = null;
+
+function unlockOrganizer(){
+  if(isOrganizerMode) return true;
+  const pin = prompt('請輸入主辦人密碼：');
+  if(pin === null) return false;
+  if(pin !== ORGANIZER_PIN){
+    alert('密碼錯誤');
+    return false;
+  }
+  isOrganizerMode = true;
+  el('editDeadlineBtn').style.display = 'inline-block';
+  el('eventTag').style.display = 'inline-block';
+  el('organizerSection').style.display = 'block';
+  el('unlockOrganizerBtn').style.display = 'none';
+  return true;
+}
+
+function isDeadlinePassed(){
+  if(!currentDeadline) return false;
+  return Date.now() > new Date(currentDeadline).getTime();
+}
+
+function applyLockState(){
+  const banner = el('warnBanner');
+  const bannerText = banner.querySelector('.warn-text');
+  const warnBtn = el('warnSwitchBtn');
+  const registerCard = el('registerCard');
+  const volunteerCard = el('volunteerCard');
+
+  const deadlinePassed = isDeadlinePassed();
+  const locked = !isEventConfigured || deadlinePassed;
+
+  if(!locked){
+    banner.style.display = 'none';
+    registerCard.classList.remove('form-locked');
+    volunteerCard.classList.remove('form-locked');
+    return;
+  }
+
+  banner.style.display = 'flex';
+  registerCard.classList.add('form-locked');
+  volunteerCard.classList.add('form-locked');
+
+  if(!isEventConfigured){
+    bannerText.textContent = '⚠️ 這個連結還沒有設定正式場次，請先確認你拿到的是不是正確的活動連結';
+    warnBtn.style.display = 'inline-block';
+  }else if(deadlinePassed){
+    const d = new Date(currentDeadline);
+    bannerText.textContent = `⏰ 這場登記已於 ${d.toLocaleDateString('zh-TW')} 截止，無法再填寫或修改`;
+    warnBtn.style.display = 'none';
+  }
+}
+
+function renderDeadlineTag(){
+  const tag = el('deadlineTag');
+  if(!currentDeadline){
+    tag.textContent = '尚未設定截止時間';
+    tag.classList.remove('passed');
+    return;
+  }
+  const d = new Date(currentDeadline);
+  const label = `登記截止:${d.toLocaleDateString('zh-TW')}`;
+  if(isDeadlinePassed()){
+    tag.textContent = `${label}（已截止）`;
+    tag.classList.add('passed');
+  }else{
+    tag.textContent = label;
+    tag.classList.remove('passed');
+  }
+}
+
+function fmtMoney(n){
+  return '$' + Number(n).toLocaleString();
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function setStatus(msg, isErr){
+  const statusMsg = el('statusMsg');
+  statusMsg.textContent = msg || '';
+  statusMsg.className = 'status' + (isErr ? ' err' : '');
+}
+
+// ---- 大家的登記 ----
+
+function renderStatusSummary(list){
+  const el2 = el('statusSummary');
+  const got = list.filter(o => o.status === 'got').length;
+  const need = list.filter(o => o.status === 'need').length;
+  const pending = list.length - got - need;
+  if(!list.length || (got === 0 && need === 0)){
+    el2.style.display = 'none';
+    return;
+  }
+  el2.style.display = 'flex';
+  el2.innerHTML = `
+    <span class="summary-chip chip-got">✅ 已搶到 ${got} 人</span>
+    <span class="summary-chip chip-need">❌ 缺票 ${need} 人</span>
+    <span class="summary-chip chip-pending">⬜ 未確認 ${pending} 人</span>
+  `;
+}
+
+function renderTable(list){
+  const tableWrap = el('tableWrap');
+  if(!list.length){
+    tableWrap.innerHTML = '<div class="empty-state">還沒有人登記，第一個填寫上面的表單吧</div>';
+    return;
+  }
+  renderStatusSummary(list);
+
+  const statusMap = {
+    '': { label: '未確認', cls: 'status-pending' },
+    'got': { label: '✅ 已搶到', cls: 'status-got' },
+    'need': { label: '❌ 缺票', cls: 'status-need' }
+  };
+
+  let rows = list.map((o, idx) => {
+    const hasPrice = o.price !== null && o.price !== undefined;
+    const priceCell = hasPrice ? fmtMoney(o.price) : '<span class="no-price-tag">不限金額</span>';
+    const subtotalCell = hasPrice ? fmtMoney(o.qty * o.price) : '<span class="no-price-tag">—</span>';
+    const isFirst = idx === 0;
+    const isLast = idx === list.length - 1;
+    const status = o.status || '';
+    const statusInfo = statusMap[status] || statusMap[''];
+    const rowCls = status ? `row-${status}` : '';
+    return `<tr class="${rowCls}">
+      <td class="rank-cell">
+        <div class="rank-controls">
+          <button class="move-btn" data-idx="${idx}" data-dir="up" ${isFirst ? 'disabled' : ''}>▲</button>
+          <span class="rank-num">${idx + 1}</span>
+          <button class="move-btn" data-idx="${idx}" data-dir="down" ${isLast ? 'disabled' : ''}>▼</button>
+        </div>
+      </td>
+      <td class="name-cell">${escapeHtml(o.name)}</td>
+      <td>
+        <button class="status-btn ${statusInfo.cls}" data-name="${escapeHtml(o.name)}">${statusInfo.label}</button>
+      </td>
+      <td class="num-col">${o.qty}</td>
+      <td class="num-col">${priceCell}</td>
+      <td class="num-col">${subtotalCell}</td>
+      <td style="text-align:right;white-space:nowrap;">
+        <button class="edit-btn" data-name="${escapeHtml(o.name)}">編輯</button>
+        <button class="del-btn" data-name="${escapeHtml(o.name)}">刪除</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tableWrap.innerHTML = `<div class="table-scroll"><table>
+    <thead>
+      <tr>
+        <th>順序</th>
+        <th>姓名</th>
+        <th>搶票狀態</th>
+        <th class="num-col">張數</th>
+        <th class="num-col">單張金額</th>
+        <th class="num-col">小計</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+
+  tableWrap.querySelectorAll('.status-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.getAttribute('data-name');
+      const entry = list.find(o => o.name === name);
+      const current = (entry && entry.status) || '';
+      const next = current === '' ? 'got' : (current === 'got' ? 'need' : '');
+      updateOrderStatusAPI(name, next).catch(() => {
+        setStatus('狀態更新失敗，請再試一次', true);
+      });
+    });
+  });
+
+  tableWrap.querySelectorAll('.move-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.disabled) return;
+      const idx = parseInt(btn.getAttribute('data-idx'), 10);
+      const dir = btn.getAttribute('data-dir');
+      const name = list[idx].name;
+      moveOrderAPI(name, dir).catch(() => {
+        setStatus('順序更新失敗，請重新整理', true);
+      });
+    });
+  });
+
+  tableWrap.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.getAttribute('data-name');
+      const entry = list.find(o => o.name === name);
+      if(!entry) return;
+
+      el('inpName').value = entry.name;
+      el('inpQty').value = entry.qty;
+      const hasPrice = entry.price !== null && entry.price !== undefined;
+      noPriceCheck.checked = !hasPrice;
+      priceInput.disabled = !hasPrice;
+      priceInput.value = hasPrice ? entry.price : '';
+
+      editingOriginalName = entry.name;
+      el('cancelEditBtn').style.display = 'inline-block';
+
+      setStatus(`正在編輯「${name}」的登記，改完按下方送出即可更新（如果改了姓名，會把舊資料一起更新過去，不會留下重複的舊登記）`, false);
+      el('inpName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el('inpQty').focus();
+    });
+  });
+
+  tableWrap.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.disabled) return;
+      if(btn.dataset.confirm === '1'){
+        const name = btn.getAttribute('data-name');
+        deleteOrderAPI(name).catch(() => {
+          setStatus('刪除失敗，請重新整理', true);
+        });
+        return;
+      }
+      btn.dataset.confirm = '1';
+      btn.textContent = '確定刪除?';
+      btn.style.color = 'var(--stamp)';
+      btn.style.fontWeight = '700';
+      setTimeout(() => {
+        if(btn.isConnected && btn.dataset.confirm === '1'){
+          btn.dataset.confirm = '0';
+          btn.textContent = '刪除';
+          btn.style.color = '';
+          btn.style.fontWeight = '';
+        }
+      }, 2500);
+    });
+  });
+}
+
+function updateTotals(list){
+  const totalQty = list.reduce((s,o) => s + o.qty, 0);
+  const pricedEntries = list.filter(o => o.price !== null && o.price !== undefined);
+  const totalAmount = pricedEntries.reduce((s,o) => s + o.qty * o.price, 0);
+  const unpricedCount = list.length - pricedEntries.length;
+  const totalPeople = list.length;
+
+  el('totalQtyNum').textContent = totalQty;
+  el('totalPeopleNum').textContent = totalPeople;
+  el('sumQty').textContent = totalQty;
+  el('sumAmount').textContent = fmtMoney(totalAmount);
+  el('sumPeople').textContent = totalPeople;
+
+  const noteEl = el('unpricedNote');
+  noteEl.textContent = unpricedCount ? `金額總計不含 ${unpricedCount} 位「不限金額」的登記` : '';
+}
+
+// ---- 志工 ----
+
+function renderVolunteers(list){
+  const wrap = el('volunteerList');
+  if(!list.length){
+    wrap.innerHTML = '<div class="volunteer-empty">目前還沒有人自願幫忙搶票</div>';
+    return;
+  }
+  const sorted = [...list].sort((a,b) => a.ts - b.ts);
+  wrap.innerHTML = sorted.map(v => `
+    <div class="volunteer-chip">
+      ${escapeHtml(v.name)}
+      <button data-name="${escapeHtml(v.name)}" title="移除">✕</button>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.disabled) return;
+      const name = btn.getAttribute('data-name');
+      removeVolunteerAPI(name).catch(() => {
+        setStatus('移除志工失敗，請再試一次', true);
+      });
+    });
+  });
+}
+
+// ---- Firebase 讀寫 ----
+
+async function resolveEventId(){
+  const snap = await db.ref('meta/currentEvent').once('value');
+  const mapped = snap.val();
+  return mapped || 'default';
+}
+
+function ensureEventRegistered(eventId){
+  const ref = db.ref(`eventsIndex/${eventId}`);
+  ref.once('value').then(snap => {
+    if(!snap.exists()){
+      ref.set({ title: '', deadline: '' });
+    }
+  });
+}
+
+async function upsertOrderAPI(entry){
+  const key = sanitizeKey(entry.name);
+  await db.ref(`events/${EVENT_ID}/orders/${key}`).set({
+    name: entry.name,
+    qty: entry.qty,
+    price: (entry.price === null || entry.price === undefined) ? null : entry.price,
+    order: entry.order,
+    status: entry.status || '',
+    membershipUrl: entry.membershipUrl || '',
+    ts: entry.ts || Date.now()
+  });
+}
+
+async function uploadMembershipFile(name, file){
+  const key = sanitizeKey(name);
+  const ref = storage.ref(`events/${EVENT_ID}/membership/${key}.jpg`);
+  await ref.put(file);
+  return await ref.getDownloadURL();
+}
+
+async function updateOrderStatusAPI(name, status){
+  await db.ref(`events/${EVENT_ID}/orders/${sanitizeKey(name)}`).update({ status });
+}
+
+async function deleteOrderAPI(name){
+  await db.ref(`events/${EVENT_ID}/orders/${sanitizeKey(name)}`).remove();
+}
+
+async function moveOrderAPI(name, direction){
+  const idx = ordersCache.findIndex(o => o.name === name);
+  if(idx === -1) return;
+  const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if(targetIdx < 0 || targetIdx >= ordersCache.length) return;
+  const a = ordersCache[idx];
+  const b = ordersCache[targetIdx];
+  const updates = {};
+  updates[`events/${EVENT_ID}/orders/${sanitizeKey(a.name)}/order`] = b.order;
+  updates[`events/${EVENT_ID}/orders/${sanitizeKey(b.name)}/order`] = a.order;
+  await db.ref().update(updates);
+}
+
+async function addVolunteerAPI(entry){
+  const key = sanitizeKey(entry.name);
+  const ref = db.ref(`events/${EVENT_ID}/volunteers/${key}`);
+  const snap = await ref.once('value');
+  if(snap.exists()) return;
+  await ref.set(entry);
+}
+
+async function removeVolunteerAPI(name){
+  await db.ref(`events/${EVENT_ID}/volunteers/${sanitizeKey(name)}`).remove();
+}
+
+async function saveTitle(val){
+  await db.ref(`eventsIndex/${EVENT_ID}/title`).set(val);
+}
+
+async function saveDeadline(iso){
+  await db.ref(`eventsIndex/${EVENT_ID}/deadline`).set(iso || '');
+}
+
+function posToPercent(val, isY){
+  if(val === undefined || val === null || val === ''){ return 50; }
+  if(typeof val === 'number'){ return val; }
+  const map = isY ? {top:0, center:50, bottom:100} : {left:0, center:50, right:100};
+  if(Object.prototype.hasOwnProperty.call(map, val)){ return map[val]; }
+  const num = parseFloat(val);
+  return isNaN(num) ? 50 : num;
+}
+
+async function saveBgImage(url, posX, posY, textPos){
+  await db.ref(`eventsIndex/${EVENT_ID}/bgImage`).set(url || '');
+  await db.ref(`eventsIndex/${EVENT_ID}/bgPosX`).set(posX === undefined ? 50 : posX);
+  await db.ref(`eventsIndex/${EVENT_ID}/bgPosY`).set(posY === undefined ? 50 : posY);
+  await db.ref(`eventsIndex/${EVENT_ID}/textPos`).set(textPos || 'center');
+}
+
+const TEXT_POS_ALIGN = { top: 'flex-start', center: 'center', bottom: 'flex-end' };
+
+function applyStubBackground(url, posX, posY, textPos){
+  const stubEl = el('stubEl');
+  stubEl.style.alignItems = TEXT_POS_ALIGN[textPos] || 'center';
+  if(url){
+    const safeUrl = url.replace(/'/g, '%27');
+    const position = `${posX === undefined ? 50 : posX}% ${posY === undefined ? 50 : posY}%`;
+    stubEl.style.background = `linear-gradient(to bottom, rgba(27,36,48,0.55) 0%, rgba(27,36,48,0.1) 30%, rgba(27,36,48,0.1) 70%, rgba(27,36,48,0.55) 100%), url('${safeUrl}') ${position}/cover no-repeat`;
+  }else{
+    stubEl.style.background = '';
+  }
+}
+
+async function listEvents(){
+  const snap = await db.ref('eventsIndex').once('value');
+  const val = snap.val() || {};
+  return Object.keys(val).map(k => ({
+    event: k,
+    title: (val[k] && val[k].title) || '',
+    deadline: (val[k] && val[k].deadline) || '',
+    archived: !!(val[k] && val[k].archived),
+    ticketDate: (val[k] && val[k].ticketDate) || '',
+    salePhases: normalizeSalePhases(val[k] && val[k].salePhases),
+    eventDate: (val[k] && val[k].eventDate) || ''
+  }));
+}
+
+async function loadCurrentEventInfo(){
+  const snap = await db.ref('meta/currentEvent').once('value');
+  return snap.val() || '';
+}
+
+async function setCurrentEventPointer(eventId){
+  await db.ref('meta/currentEvent').set(eventId);
+}
+
+// ---- 即時監聽（有人異動資料，畫面自動更新） ----
+
+let ordersListenerRef = null;
+let volunteersListenerRef = null;
+let indexListenerRef = null;
+
+function detachListeners(){
+  if(ordersListenerRef) ordersListenerRef.off();
+  if(volunteersListenerRef) volunteersListenerRef.off();
+  if(indexListenerRef) indexListenerRef.off();
+}
+
+function attachListeners(eventId){
+  detachListeners();
+
+  ordersListenerRef = db.ref(`events/${eventId}/orders`);
+  ordersListenerRef.on('value', snap => {
+    const val = snap.val() || {};
+    const list = Object.keys(val).map(k => val[k]);
+    list.sort((a,b) => (a.order || 0) - (b.order || 0));
+    ordersCache = list;
+    renderTable(list);
+    updateTotals(list);
+  });
+
+  volunteersListenerRef = db.ref(`events/${eventId}/volunteers`);
+  volunteersListenerRef.on('value', snap => {
+    const val = snap.val() || {};
+    const list = Object.keys(val).map(k => val[k]);
+    volunteersCache = list;
+    renderVolunteers(list);
+  });
+
+  indexListenerRef = db.ref(`eventsIndex/${eventId}`);
+  indexListenerRef.on('value', snap => {
+    const data = snap.val() || {};
+    const title = data.title || '';
+    if(title){
+      titleDisplay.textContent = title;
+      titleDisplay.dataset.raw = 'text';
+      isEventConfigured = true;
+    }else{
+      titleDisplay.textContent = '尚未設定場次標題';
+      titleDisplay.dataset.raw = 'placeholder';
+      isEventConfigured = false;
+    }
+    currentDeadline = data.deadline || '';
+    currentBgImage = data.bgImage || '';
+    currentBgPosX = posToPercent(data.bgPosX, false);
+    currentBgPosY = posToPercent(data.bgPosY, true);
+    currentTextPos = data.textPos || 'center';
+    currentTicketDate = data.ticketDate || '';
+    currentSalePhases = normalizeSalePhases(data.salePhases);
+    currentEventDate = data.eventDate || '';
+    currentVenue = data.venue || '';
+    currentTicketPrice = data.ticketPrice || '';
+    currentLinks = data.links || '';
+    currentArchived = !!data.archived;
+    currentPriceDisabled = !!data.priceDisabled;
+    currentRequireMembership = !!data.requireMembership;
+    renderDeadlineTag();
+    applyLockState();
+    applyStubBackground(currentBgImage, currentBgPosX, currentBgPosY, currentTextPos);
+    renderInfoCard();
+    renderArchiveStatus();
+    renderPriceFieldState();
+    renderPriceToggleStatus();
+    renderMembershipFieldState();
+    renderMembershipToggleStatus();
+  });
+}
+
+function renderPriceFieldState(){
+  const wrap = el('priceFieldWrap');
+  if(currentPriceDisabled){
+    wrap.style.display = 'none';
+  }else{
+    wrap.style.display = '';
+  }
+}
+
+function renderMembershipFieldState(){
+  const wrap = el('membershipWrap');
+  wrap.style.display = currentRequireMembership ? 'block' : 'none';
+  if(!currentRequireMembership){
+    el('inpMembershipAck').checked = false;
+    el('inpMembershipFile').disabled = true;
+    el('inpMembershipFile').value = '';
+    el('membershipFileHint').textContent = '';
+  }
+}
+
+function renderMembershipToggleStatus(){
+  const tag = el('membershipToggleStatusTag');
+  const btn = el('toggleMembershipBtn');
+  if(currentRequireMembership){
+    tag.textContent = '需要（大家登記時必須上傳截圖）';
+    btn.textContent = '關閉會員資格上傳';
+  }else{
+    tag.textContent = '不需要';
+    btn.textContent = '開啟會員資格上傳';
+  }
+}
+
+function normalizeSalePhases(raw){
+  if(!raw) return [];
+  const list = Array.isArray(raw) ? raw : Object.values(raw);
+  return list
+    .filter(p => p && (p.label || p.time))
+    .map(p => ({ label: p.label || '', time: p.time || '' }));
+}
+
+function formatSalePhases(phases){
+  return phases.map(p => {
+    if(p.label && p.time) return `${p.label}：${p.time}`;
+    return p.label || p.time;
+  }).join('\n');
+}
+
+function renderInfoCard(){
+  el('infoEventDate').textContent = currentEventDate || '未提供';
+  el('infoTicketDate').textContent = currentSalePhases.length
+    ? formatSalePhases(currentSalePhases)
+    : (currentTicketDate || '未提供');
+  el('infoVenue').textContent = currentVenue || '未提供';
+  el('infoPrice').textContent = currentTicketPrice || '未提供';
+
+  const linksEl = el('infoLinks');
+  const lines = (currentLinks || '').split('\n').map(l => l.trim()).filter(Boolean);
+  if(!lines.length){
+    linksEl.textContent = '未提供';
+  }else{
+    linksEl.innerHTML = lines.map(link => {
+      let href = null;
+      if(/^https?:\/\//i.test(link)){
+        href = link;
+      }else if(/^www\./i.test(link) || /^[a-z0-9-]+\.[a-z]{2,}(\/|$)/i.test(link)){
+        href = `https://${link}`;
+      }
+      if(href){
+        const safeHref = href.replace(/"/g, '%22');
+        return `<a href="${safeHref}" target="_blank" rel="noopener">${escapeHtml(link)}</a>`;
+      }
+      return escapeHtml(link);
+    }).join('');
+  }
+}
+
+// ---- 表單 ----
+
+const noPriceCheck = el('inpNoPrice');
+const priceInput = el('inpPrice');
+
+noPriceCheck.addEventListener('change', () => {
+  priceInput.disabled = noPriceCheck.checked;
+  if(noPriceCheck.checked){ priceInput.value = ''; }
+});
+
+el('submitBtn').addEventListener('click', async () => {
+  if(!isEventConfigured){
+    setStatus('這個場次還沒有設定名稱，請先切換到正確的場次連結', true);
+    openEventPanel();
+    return;
+  }
+  const name = el('inpName').value.trim();
+  const qty = parseInt(el('inpQty').value, 10);
+  const noPrice = currentPriceDisabled ? true : noPriceCheck.checked;
+  const priceRaw = priceInput.value;
+  const price = noPrice ? null : parseFloat(priceRaw);
+
+  if(!name){ setStatus('請填寫姓名', true); return; }
+  if(!qty || qty <= 0){ setStatus('請填寫有效的張數', true); return; }
+  if(!noPrice && (isNaN(price) || price < 0)){ setStatus('請填寫願付金額，或勾選「不限金額」', true); return; }
+
+  const isRename = editingOriginalName && editingOriginalName !== name;
+  const baseEntry = editingOriginalName
+    ? ordersCache.find(o => o.name === editingOriginalName)
+    : ordersCache.find(o => o.name === name);
+
+  let membershipFile = null;
+  if(currentRequireMembership){
+    if(!el('inpMembershipAck').checked){
+      setStatus('請先閱讀並勾選「我已閱讀以上上傳須知」', true);
+      return;
+    }
+    membershipFile = el('inpMembershipFile').files[0] || null;
+    const hasExisting = baseEntry && baseEntry.membershipUrl;
+    if(!membershipFile && !hasExisting){
+      setStatus('這個場次需要上傳會員資格截圖才能送出', true);
+      return;
+    }
+    if(membershipFile && membershipFile.size > MEMBERSHIP_MAX_BYTES){
+      setStatus('會員資格截圖超過 1MB，請壓縮後再上傳', true);
+      return;
+    }
+  }
+
+  const maxOrder = ordersCache.reduce((m,o) => Math.max(m, o.order || 0), 0);
+  const orderVal = baseEntry ? baseEntry.order : maxOrder + 1;
+
+  setStatus(membershipFile ? '上傳截圖中…' : '送出中…');
+  try{
+    let membershipUrl = (baseEntry && baseEntry.membershipUrl) || '';
+    if(membershipFile){
+      membershipUrl = await uploadMembershipFile(name, membershipFile);
+    }
+
+    const newEntry = {
+      name, qty,
+      price: noPrice ? null : price,
+      order: orderVal,
+      status: (baseEntry && baseEntry.status) || '',
+      membershipUrl,
+      ts: Date.now()
+    };
+
+    setStatus('送出中…');
+    await upsertOrderAPI(newEntry);
+    if(isRename){
+      await deleteOrderAPI(editingOriginalName);
+    }
+    editingOriginalName = null;
+    el('cancelEditBtn').style.display = 'none';
+    if(currentRequireMembership){
+      el('inpMembershipAck').checked = false;
+      el('inpMembershipFile').disabled = true;
+      el('inpMembershipFile').value = '';
+      el('membershipFileHint').textContent = '';
+    }
+    setStatus('已送出，感謝登記！');
+  }catch(e){
+    setStatus('送出失敗，請再試一次', true);
+  }
+});
+
+el('volunteerBtn').addEventListener('click', () => {
+  if(!isEventConfigured){
+    setStatus('這個場次還沒有設定名稱，請先切換到正確的場次連結', true);
+    openEventPanel();
+    return;
+  }
+  const nameInput = el('inpVolunteer');
+  const name = nameInput.value.trim();
+  if(!name) return;
+  nameInput.value = '';
+  addVolunteerAPI({ name, ts: Date.now() }).catch(() => {
+    setStatus('新增志工失敗，請再試一次', true);
+  });
+});
+
+el('inpVolunteer').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ el('volunteerBtn').click(); }
+});
+
+// ---- 標題顯示 ----
+const titleDisplay = el('titleDisplay');
+
+el('renameTitleBtn').addEventListener('click', async () => {
+  const val = el('inpRenameTitle').value.trim();
+  if(!val){
+    setStatus('請先輸入新的場次標題', true);
+    return;
+  }
+  if(!unlockOrganizer()) return;
+  await saveTitle(val);
+  setStatus('場次標題已更新！');
+});
+
+// ---- 匯出 Excel ----
+
+let xlsxLoadPromise = null;
+function ensureXlsxLoaded(){
+  if(window.XLSX) return Promise.resolve();
+  if(xlsxLoadPromise) return xlsxLoadPromise;
+  xlsxLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+  return xlsxLoadPromise;
+}
+
+el('exportBtn').addEventListener('click', async () => {
+  if(!ordersCache.length){
+    setStatus('目前還沒有資料可以匯出', true);
+    return;
+  }
+  const exportBtn = el('exportBtn');
+  exportBtn.disabled = true;
+  exportBtn.textContent = '準備中…';
+  try{
+    await ensureXlsxLoaded();
+  }catch(e){
+    setStatus('匯出套件載入失敗，請檢查網路連線後再試一次', true);
+    exportBtn.disabled = false;
+    exportBtn.textContent = '匯出 Excel';
+    return;
+  }
+
+  const statusLabelMap = { got: '已搶到', need: '缺票', '': '未確認' };
+  const list = ordersCache;
+  const rows = list.map((o, idx) => {
+    const hasPrice = o.price !== null && o.price !== undefined;
+    return {
+      '順序': idx + 1,
+      '姓名': o.name,
+      '搶票狀態': statusLabelMap[o.status || ''],
+      '張數': o.qty,
+      '單張願付金額': hasPrice ? o.price : '不限金額',
+      '小計': hasPrice ? o.qty * o.price : '不限金額',
+      '會員資格截圖': o.membershipUrl || '未提供',
+      '登記時間': new Date(o.ts).toLocaleString('zh-TW')
+    };
+  });
+  const totalQty = list.reduce((s,o) => s + o.qty, 0);
+  const pricedEntries = list.filter(o => o.price !== null && o.price !== undefined);
+  const totalAmount = pricedEntries.reduce((s,o) => s + o.qty * o.price, 0);
+  rows.push({});
+  rows.push({ '姓名': '總計', '張數': totalQty, '單張願付金額': '', '小計': totalAmount, '登記時間': '' });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:14},{wch:10},{wch:8},{wch:14},{wch:12},{wch:40},{wch:20}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '購票登記');
+
+  const volunteers = volunteersCache;
+  if(volunteers.length){
+    const vRows = [...volunteers].sort((a,b) => a.ts - b.ts).map(v => ({ '姓名': v.name }));
+    const wsV = XLSX.utils.json_to_sheet(vRows);
+    wsV['!cols'] = [{wch:14}];
+    XLSX.utils.book_append_sheet(wb, wsV, '幫搶志工');
+  }
+
+  const eventTitle = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '購票登記';
+  const filename = `${eventTitle}_購票登記_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, filename);
+
+  exportBtn.disabled = false;
+  exportBtn.textContent = '匯出 Excel';
+});
+
+// ---- 場次管理 ----
+
+async function refreshPointerTag(){
+  const tag = el('currentPointerTag');
+  tag.textContent = '讀取中…';
+  const current = await loadCurrentEventInfo();
+  if(!current){
+    tag.textContent = '尚未設定（目前會顯示「尚未設定正式場次」警告）';
+  }else{
+    tag.textContent = current === EVENT_ID ? `${current}（就是目前這個場次）` : current;
+  }
+}
+
+async function openEventPanel(){
+  const body = el('eventPanelBody');
+  body.style.display = 'block';
+  const events = await listEvents();
+  const switcher = el('eventSwitcher');
+  const visibleEvents = events.filter(ev => !ev.archived && ev.event !== 'default');
+  switcher.innerHTML = '<option value="">請選擇場次…</option>' + visibleEvents.map(ev => {
+    const label = ev.title ? ev.title : `${ev.event}（尚未設定標題）`;
+    const selected = ev.event === EVENT_ID ? 'selected' : '';
+    return `<option value="${escapeHtml(ev.event)}" ${selected}>${escapeHtml(label)}</option>`;
+  }).join('');
+  el('inpRenameTitle').value = titleDisplay.dataset.raw === 'text' ? titleDisplay.textContent : '';
+  el('renameEventTag').textContent = EVENT_ID;
+  el('inpDeadlineInline').value = currentDeadline ? new Date(currentDeadline).toISOString().slice(0,10) : '';
+  el('inpEventDate').value = currentEventDate;
+  for(let i = 0; i < 4; i++){
+    const phase = currentSalePhases[i] || { label: '', time: '' };
+    el(`inpSalePhase${i+1}Label`).value = phase.label;
+    el(`inpSalePhase${i+1}Time`).value = phase.time === '待公布' ? '' : phase.time;
+  }
+  const phase1TBA = (currentSalePhases[0] || {}).time === '待公布';
+  el('inpSalePhase1TBA').checked = phase1TBA;
+  el('inpSalePhase1Time').disabled = phase1TBA;
+  el('inpVenue').value = currentVenue;
+  el('inpTicketPrice').value = currentTicketPrice;
+  el('inpLinks').value = currentLinks;
+  el('inpBgImage').value = currentBgImage;
+  el('inpTextPos').value = currentTextPos;
+  bgPreviewPosX = currentBgPosX;
+  bgPreviewPosY = currentBgPosY;
+  updateBgPreview();
+  el('fixedLinkDisplay').value = `${window.location.origin}${window.location.pathname}`;
+  refreshPointerTag();
+  renderArchiveStatus();
+  renderPriceToggleStatus();
+  renderMembershipToggleStatus();
+  el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderArchiveStatus(){
+  const tag = el('archiveStatusTag');
+  const btn = el('toggleArchiveBtn');
+  if(currentArchived){
+    tag.textContent = '已封存（不會出現在切換清單裡）';
+    btn.textContent = '取消封存這個場次';
+  }else{
+    tag.textContent = '正常顯示中';
+    btn.textContent = '封存這個場次';
+  }
+}
+
+function renderPriceToggleStatus(){
+  const tag = el('priceToggleStatusTag');
+  const btn = el('togglePriceFieldBtn');
+  if(currentPriceDisabled){
+    tag.textContent = '已關閉（前台一律不限金額登記）';
+    btn.textContent = '重新開啟金額欄位';
+  }else{
+    tag.textContent = '正常顯示中';
+    btn.textContent = '關閉金額欄位';
+  }
+}
+
+el('togglePriceFieldBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  const newState = !currentPriceDisabled;
+  try{
+    await db.ref(`eventsIndex/${EVENT_ID}/priceDisabled`).set(newState);
+    setStatus(newState ? '已關閉金額欄位，前台會自動以不限金額登記！' : '已重新開啟金額欄位！');
+  }catch(e){
+    setStatus('操作失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
+  }
+});
+
+el('toggleMembershipBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  const newState = !currentRequireMembership;
+  try{
+    await db.ref(`eventsIndex/${EVENT_ID}/requireMembership`).set(newState);
+    setStatus(newState ? '已開啟會員資格上傳！' : '已關閉會員資格上傳！');
+  }catch(e){
+    setStatus('操作失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
+  }
+});
+
+el('toggleMembershipGuideBtn').addEventListener('click', () => {
+  const body = el('membershipGuideBody');
+  const btn = el('toggleMembershipGuideBtn');
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? 'block' : 'none';
+  btn.textContent = isHidden ? '收合說明' : '展開說明';
+});
+
+el('inpMembershipAck').addEventListener('change', () => {
+  el('inpMembershipFile').disabled = !el('inpMembershipAck').checked;
+});
+
+el('inpMembershipFile').addEventListener('change', () => {
+  const file = el('inpMembershipFile').files[0];
+  const hint = el('membershipFileHint');
+  if(!file){ hint.textContent = ''; return; }
+  if(file.size > MEMBERSHIP_MAX_BYTES){
+    hint.textContent = `⚠️ 檔案太大（${(file.size/1024/1024).toFixed(2)}MB），請壓縮到 1MB 以內再重新選取`;
+    hint.style.color = 'var(--stamp)';
+    el('inpMembershipFile').value = '';
+  }else{
+    hint.textContent = `已選擇：${file.name}（${(file.size/1024).toFixed(0)}KB）`;
+    hint.style.color = 'var(--ink-soft)';
+  }
+});
+
+el('copyFixedLinkBtn').addEventListener('click', async () => {
+  const link = el('fixedLinkDisplay').value;
+  try{
+    await navigator.clipboard.writeText(link);
+    setStatus('已複製固定連結！');
+  }catch(e){
+    el('fixedLinkDisplay').select();
+    setStatus('自動複製失敗，已幫你反白，請手動 Ctrl/Cmd+C 複製', true);
+  }
+});
+
+el('toggleArchiveBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  const newState = !currentArchived;
+  try{
+    await db.ref(`eventsIndex/${EVENT_ID}/archived`).set(newState);
+    setStatus(newState ? '這個場次已封存，不會再出現在切換清單裡！' : '已取消封存，這個場次會重新出現在清單裡！');
+  }catch(e){
+    setStatus('操作失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
+  }
+});
+
+el('setCurrentBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  try{
+    await setCurrentEventPointer(EVENT_ID);
+    setStatus('已將固定連結指向這個場次！');
+    await refreshPointerTag();
+  }catch(e){
+    setStatus('設定失敗：' + (e && e.message ? e.message : '請檢查網路連線或 Firebase 規則'), true);
+  }
+});
+
+el('clearCurrentBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  if(!confirm('確定要清除固定連結指向嗎？之後大家打開不帶場次代碼的連結，會看到「尚未設定正式場次」的警示，直到你重新設定指向某個場次為止。')) return;
+  try{
+    await db.ref('meta/currentEvent').remove();
+    setStatus('已清除固定連結指向！');
+    await refreshPointerTag();
+  }catch(e){
+    setStatus('清除失敗：' + (e && e.message ? e.message : '請檢查網路連線或 Firebase 規則'), true);
+  }
+});
+
+el('unlockOrganizerBtn').addEventListener('click', () => {
+  if(unlockOrganizer()){
+    openEventPanel();
+  }
+});
+
+el('toggleEventPanelBtn').addEventListener('click', () => {
+  const body = el('eventPanelBody');
+  const isHidden = body.style.display === 'none';
+  if(isHidden){
+    openEventPanel();
+  }else{
+    body.style.display = 'none';
+  }
+});
+
+el('warnSwitchBtn').addEventListener('click', () => {
+  openEventPanel();
+});
+
+el('eventSwitcher').addEventListener('change', async (e) => {
+  const chosen = e.target.value;
+  if(chosen && chosen !== EVENT_ID){
+    await switchToEvent(chosen);
+    openEventPanel();
+  }
+});
+
+el('createEventBtn').addEventListener('click', async () => {
+  const name = el('inpNewEvent').value.trim();
+  if(!name){
+    setStatus('請先填寫新場次的名稱', true);
+    return;
+  }
+  if(!unlockOrganizer()) return;
+  const slug = name.replace(/\s+/g, '-');
+  const setAsCurrent = el('inpSetAsCurrent').checked;
+  el('createEventBtn').disabled = true;
+  setStatus('建立場次中…');
+  try{
+    await db.ref(`eventsIndex/${slug}`).set({ title: name, deadline: '' });
+    if(setAsCurrent){
+      await setCurrentEventPointer(slug);
+    }
+    el('inpNewEvent').value = '';
+    el('createEventBtn').disabled = false;
+    await switchToEvent(slug);
+    openEventPanel();
+  }catch(e){
+    setStatus('建立失敗，請再試一次', true);
+    el('createEventBtn').disabled = false;
+  }
+});
+
+// ---- 截止日期 ----
+
+el('editDeadlineBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  await openEventPanel();
+  el('inpDeadlineInline').focus();
+});
+
+el('saveDeadlineInlineBtn').addEventListener('click', async () => {
+  const trimmed = el('inpDeadlineInline').value.trim();
+  if(!trimmed){
+    await saveDeadline('');
+    setStatus('已清除截止日期');
+    return;
+  }
+  const parsed = new Date(`${trimmed}T23:59:59`);
+  if(isNaN(parsed.getTime())){
+    setStatus('日期格式看起來不太對', true);
+    return;
+  }
+  await saveDeadline(parsed.toISOString());
+  setStatus('截止日期已更新！');
+});
+
+el('inpSalePhase1TBA').addEventListener('change', () => {
+  const timeInput = el('inpSalePhase1Time');
+  timeInput.disabled = el('inpSalePhase1TBA').checked;
+  if(el('inpSalePhase1TBA').checked){ timeInput.value = ''; }
+});
+
+el('saveInfoBtn').addEventListener('click', async () => {
+  const eventDate = el('inpEventDate').value.trim();
+  const venue = el('inpVenue').value.trim();
+  const ticketPrice = el('inpTicketPrice').value.trim();
+  const links = el('inpLinks').value.trim();
+
+  const phase1Label = el('inpSalePhase1Label').value.trim();
+  const phase1TBA = el('inpSalePhase1TBA').checked;
+  const phase1Time = phase1TBA ? '待公布' : el('inpSalePhase1Time').value.trim();
+
+  if(!phase1Label && !phase1TBA && !phase1Time){
+    setStatus('請至少填寫第一組售票時間（身份類別或時間），或勾選「時間尚未公布」', true);
+    return;
+  }
+
+  const salePhases = [{ label: phase1Label, time: phase1Time }];
+  for(let i = 2; i <= 4; i++){
+    const label = el(`inpSalePhase${i}Label`).value.trim();
+    const time = el(`inpSalePhase${i}Time`).value.trim();
+    if(label || time){
+      salePhases.push({ label, time });
+    }
+  }
+
+  try{
+    await db.ref(`eventsIndex/${EVENT_ID}/eventDate`).set(eventDate);
+    await db.ref(`eventsIndex/${EVENT_ID}/salePhases`).set(salePhases);
+    await db.ref(`eventsIndex/${EVENT_ID}/venue`).set(venue);
+    await db.ref(`eventsIndex/${EVENT_ID}/ticketPrice`).set(ticketPrice);
+    await db.ref(`eventsIndex/${EVENT_ID}/links`).set(links);
+    setStatus('活動資訊已更新！');
+  }catch(e){
+    setStatus('更新失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
+  }
+});
+
+el('toggleInfoBtn').addEventListener('click', () => {
+  const body = el('infoBody');
+  const btn = el('toggleInfoBtn');
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? 'block' : 'none';
+  btn.textContent = isHidden ? '收合詳情' : '展開詳情';
+});
+
+el('editInfoBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  await openEventPanel();
+  el('inpEventDate').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el('inpEventDate').focus();
+});
+
+let bgPreviewPosX = 50;
+let bgPreviewPosY = 50;
+let isDraggingBg = false;
+let bgDragStart = null;
+
+function updateBgPreview(){
+  const box = el('bgPreviewBox');
+  const url = el('inpBgImage').value.trim();
+  if(url){
+    const safeUrl = url.replace(/'/g, '%27');
+    box.style.backgroundImage = `url('${safeUrl}')`;
+    box.style.backgroundPosition = `${bgPreviewPosX}% ${bgPreviewPosY}%`;
+    box.classList.add('has-image');
+  }else{
+    box.style.backgroundImage = '';
+    box.classList.remove('has-image');
+  }
+}
+
+function clampPercent(v){
+  return Math.max(0, Math.min(100, v));
+}
+
+const bgPreviewBox = el('bgPreviewBox');
+
+bgPreviewBox.addEventListener('pointerdown', (e) => {
+  if(!el('inpBgImage').value.trim()) return;
+  isDraggingBg = true;
+  bgDragStart = { x: e.clientX, y: e.clientY, posX: bgPreviewPosX, posY: bgPreviewPosY };
+  e.preventDefault();
+});
+
+window.addEventListener('pointermove', (e) => {
+  if(!isDraggingBg || !bgDragStart) return;
+  const rect = bgPreviewBox.getBoundingClientRect();
+  const dxPercent = ((e.clientX - bgDragStart.x) / rect.width) * 100;
+  const dyPercent = ((e.clientY - bgDragStart.y) / rect.height) * 100;
+  bgPreviewPosX = clampPercent(bgDragStart.posX - dxPercent);
+  bgPreviewPosY = clampPercent(bgDragStart.posY - dyPercent);
+  updateBgPreview();
+});
+
+window.addEventListener('pointerup', () => {
+  isDraggingBg = false;
+  bgDragStart = null;
+});
+
+el('inpBgImage').addEventListener('input', updateBgPreview);
+
+el('resetBgPosBtn').addEventListener('click', () => {
+  bgPreviewPosX = 50;
+  bgPreviewPosY = 50;
+  updateBgPreview();
+});
+
+el('saveBgImageBtn').addEventListener('click', async () => {
+  const url = el('inpBgImage').value.trim();
+  const textPos = el('inpTextPos').value;
+  await saveBgImage(url, bgPreviewPosX, bgPreviewPosY, textPos);
+  setStatus(url ? '背景圖片已更新！' : '已清除背景圖片');
+});
+
+// ---- 場次切換（不整頁重載） ----
+
+function resetRegisterForm(){
+  el('inpName').value = '';
+  el('inpQty').value = '';
+  priceInput.value = '';
+  priceInput.disabled = false;
+  noPriceCheck.checked = false;
+  el('inpVolunteer').value = '';
+  editingOriginalName = null;
+  el('cancelEditBtn').style.display = 'none';
+  setStatus('');
+}
+
+el('cancelEditBtn').addEventListener('click', () => {
+  resetRegisterForm();
+});
+
+async function switchToEvent(newEventId){
+  EVENT_ID = newEventId;
+  history.pushState({}, '', buildEventUrl(newEventId));
+  resetRegisterForm();
+  await loadEventPage();
+}
+
+window.addEventListener('popstate', () => {
+  EVENT_ID = new URLSearchParams(window.location.search).get('event') || 'default';
+  resetRegisterForm();
+  loadEventPage();
+});
+
+async function loadEventPage(){
+  el('tableWrap').innerHTML = '<div class="empty-state">載入中…</div>';
+  el('volunteerList').innerHTML = '<div class="volunteer-empty">載入中…</div>';
+
+  const wasDefault = EVENT_ID === 'default';
+  if(wasDefault){
+    const resolved = await resolveEventId();
+    if(resolved !== 'default') EVENT_ID = resolved;
+  }
+  el('eventTag').textContent = wasDefault
+    ? `場次代碼:${EVENT_ID}（透過固定連結）`
+    : `場次代碼:${EVENT_ID}`;
+
+  ensureEventRegistered(EVENT_ID);
+  attachListeners(EVENT_ID);
+}
+
+async function loadReminderBanner(){
+  try{
+    // 直接重新確認一次「目前這個場次」是否已設定標題，避免跟監聽器的非同步時序打架
+    const titleSnap = await db.ref(`eventsIndex/${EVENT_ID}/title`).once('value');
+    const hasTitle = !!titleSnap.val();
+    if(!hasTitle){
+      // 這個場次本身還沒設定好，優先讓警示條被看到，不要用提醒彈窗蓋住它
+      el('reminderModalOverlay').style.display = 'none';
+      return;
+    }
+
+    const events = await listEvents();
+    const withDates = events.filter(ev =>
+      !ev.archived && ev.event !== 'default' &&
+      (ev.salePhases.length || (ev.ticketDate || '').trim())
+    );
+    const overlay = el('reminderModalOverlay');
+    if(!withDates.length){
+      overlay.style.display = 'none';
+      return;
+    }
+    el('reminderList').innerHTML = withDates.map(ev => {
+      const timeText = ev.salePhases.length ? formatSalePhases(ev.salePhases) : ev.ticketDate;
+      return `
+      <div class="reminder-item">
+        <div class="reminder-title">${escapeHtml(ev.title || ev.event)}</div>
+        <div class="reminder-time">${escapeHtml(timeText)}</div>
+      </div>`;
+    }).join('');
+    overlay.style.display = 'flex';
+  }catch(e){
+    // 靜默失敗，不影響主要功能
+  }
+}
+
+el('closeReminderBtn').addEventListener('click', () => {
+  el('reminderModalOverlay').style.display = 'none';
+});
+
+el('reminderModalOverlay').addEventListener('click', (e) => {
+  if(e.target === e.currentTarget){
+    el('reminderModalOverlay').style.display = 'none';
+  }
+});
+
+async function init(){
+  await loadEventPage();
+  loadReminderBanner();
+  setInterval(() => {
+    renderDeadlineTag();
+    applyLockState();
+  }, 30000);
+}
+
+init();
+</script>
+
+</body>
+</html>
