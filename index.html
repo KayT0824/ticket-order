@@ -444,6 +444,36 @@
     font-style:italic;
     font-family:'Inter',sans-serif;
   }
+  .status-summary{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  .summary-chip{
+    font-size:12px;
+    font-weight:600;
+    padding:6px 10px;
+    border-radius:999px;
+  }
+  .chip-got{background:#E3F4E8;color:#1E7A3C;}
+  .chip-need{background:#FBEAE8;color:var(--stamp);}
+  .chip-pending{background:#F0F1F3;color:var(--ink-soft);}
+  .status-btn{
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:5px 10px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+    background:#fff;
+    color:var(--ink-soft);
+  }
+  .status-btn.status-got{background:#E3F4E8;border-color:#BEE4C9;color:#1E7A3C;}
+  .status-btn.status-need{background:#FBEAE8;border-color:#F0BDB8;color:var(--stamp);}
+  tr.row-got{background:#F6FBF7;}
+  tr.row-need{background:#FEF6F5;}
   .volunteer-list{
     display:flex;
     flex-wrap:wrap;
@@ -888,6 +918,7 @@
       <h2>大家的登記</h2>
       <button class="export-btn" id="exportBtn">匯出 Excel</button>
     </div>
+    <div id="statusSummary" class="status-summary" style="display:none;"></div>
     <div id="tableWrap"><div class="empty-state">載入中…</div></div>
     <div class="totals">
       <div class="t-item">
@@ -1047,19 +1078,47 @@ function setStatus(msg, isErr){
 
 // ---- 大家的登記 ----
 
+function renderStatusSummary(list){
+  const el2 = el('statusSummary');
+  const got = list.filter(o => o.status === 'got').length;
+  const need = list.filter(o => o.status === 'need').length;
+  const pending = list.length - got - need;
+  if(!list.length || (got === 0 && need === 0)){
+    el2.style.display = 'none';
+    return;
+  }
+  el2.style.display = 'flex';
+  el2.innerHTML = `
+    <span class="summary-chip chip-got">✅ 已搶到 ${got} 人</span>
+    <span class="summary-chip chip-need">❌ 缺票 ${need} 人</span>
+    <span class="summary-chip chip-pending">⬜ 未確認 ${pending} 人</span>
+  `;
+}
+
 function renderTable(list){
   const tableWrap = el('tableWrap');
   if(!list.length){
     tableWrap.innerHTML = '<div class="empty-state">還沒有人登記，第一個填寫上面的表單吧</div>';
     return;
   }
+  renderStatusSummary(list);
+
+  const statusMap = {
+    '': { label: '未確認', cls: 'status-pending' },
+    'got': { label: '✅ 已搶到', cls: 'status-got' },
+    'need': { label: '❌ 缺票', cls: 'status-need' }
+  };
+
   let rows = list.map((o, idx) => {
     const hasPrice = o.price !== null && o.price !== undefined;
     const priceCell = hasPrice ? fmtMoney(o.price) : '<span class="no-price-tag">不限金額</span>';
     const subtotalCell = hasPrice ? fmtMoney(o.qty * o.price) : '<span class="no-price-tag">—</span>';
     const isFirst = idx === 0;
     const isLast = idx === list.length - 1;
-    return `<tr>
+    const status = o.status || '';
+    const statusInfo = statusMap[status] || statusMap[''];
+    const rowCls = status ? `row-${status}` : '';
+    return `<tr class="${rowCls}">
       <td class="rank-cell">
         <div class="rank-controls">
           <button class="move-btn" data-idx="${idx}" data-dir="up" ${isFirst ? 'disabled' : ''}>▲</button>
@@ -1068,6 +1127,9 @@ function renderTable(list){
         </div>
       </td>
       <td class="name-cell">${escapeHtml(o.name)}</td>
+      <td>
+        <button class="status-btn ${statusInfo.cls}" data-name="${escapeHtml(o.name)}">${statusInfo.label}</button>
+      </td>
       <td class="num-col">${o.qty}</td>
       <td class="num-col">${priceCell}</td>
       <td class="num-col">${subtotalCell}</td>
@@ -1083,6 +1145,7 @@ function renderTable(list){
       <tr>
         <th>順序</th>
         <th>姓名</th>
+        <th>搶票狀態</th>
         <th class="num-col">張數</th>
         <th class="num-col">單張金額</th>
         <th class="num-col">小計</th>
@@ -1091,6 +1154,18 @@ function renderTable(list){
     </thead>
     <tbody>${rows}</tbody>
   </table></div>`;
+
+  tableWrap.querySelectorAll('.status-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.getAttribute('data-name');
+      const entry = list.find(o => o.name === name);
+      const current = (entry && entry.status) || '';
+      const next = current === '' ? 'got' : (current === 'got' ? 'need' : '');
+      updateOrderStatusAPI(name, next).catch(() => {
+        setStatus('狀態更新失敗，請再試一次', true);
+      });
+    });
+  });
 
   tableWrap.querySelectorAll('.move-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1220,8 +1295,13 @@ async function upsertOrderAPI(entry){
     qty: entry.qty,
     price: (entry.price === null || entry.price === undefined) ? null : entry.price,
     order: entry.order,
+    status: entry.status || '',
     ts: entry.ts || Date.now()
   });
+}
+
+async function updateOrderStatusAPI(name, status){
+  await db.ref(`events/${EVENT_ID}/orders/${sanitizeKey(name)}`).update({ status });
 }
 
 async function deleteOrderAPI(name){
@@ -1468,7 +1548,7 @@ el('submitBtn').addEventListener('click', async () => {
     : ordersCache.find(o => o.name === name);
   const maxOrder = ordersCache.reduce((m,o) => Math.max(m, o.order || 0), 0);
   const orderVal = baseEntry ? baseEntry.order : maxOrder + 1;
-  const newEntry = { name, qty, price: noPrice ? null : price, order: orderVal, ts: Date.now() };
+  const newEntry = { name, qty, price: noPrice ? null : price, order: orderVal, status: (baseEntry && baseEntry.status) || '', ts: Date.now() };
 
   setStatus('送出中…');
   try{
@@ -1550,12 +1630,14 @@ el('exportBtn').addEventListener('click', async () => {
     return;
   }
 
+  const statusLabelMap = { got: '已搶到', need: '缺票', '': '未確認' };
   const list = ordersCache;
   const rows = list.map((o, idx) => {
     const hasPrice = o.price !== null && o.price !== undefined;
     return {
       '順序': idx + 1,
       '姓名': o.name,
+      '搶票狀態': statusLabelMap[o.status || ''],
       '張數': o.qty,
       '單張願付金額': hasPrice ? o.price : '不限金額',
       '小計': hasPrice ? o.qty * o.price : '不限金額',
@@ -1569,7 +1651,7 @@ el('exportBtn').addEventListener('click', async () => {
   rows.push({ '姓名': '總計', '張數': totalQty, '單張願付金額': '', '小計': totalAmount, '登記時間': '' });
 
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{wch:6},{wch:14},{wch:8},{wch:14},{wch:12},{wch:20}];
+  ws['!cols'] = [{wch:6},{wch:14},{wch:10},{wch:8},{wch:14},{wch:12},{wch:20}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '購票登記');
 
