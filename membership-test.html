@@ -1721,7 +1721,8 @@ async function listEvents(){
     archived: !!(val[k] && val[k].archived),
     ticketDate: (val[k] && val[k].ticketDate) || '',
     salePhases: normalizeSalePhases(val[k] && val[k].salePhases),
-    eventDate: (val[k] && val[k].eventDate) || ''
+    eventDate: (val[k] && val[k].eventDate) || '',
+    uploadDeadline: (val[k] && val[k].uploadDeadline) || ''
   }));
 }
 
@@ -2719,7 +2720,7 @@ async function loadReminderBanner(){
     const events = await listEvents();
     const withDates = events.filter(ev =>
       !ev.archived && ev.event !== 'default' &&
-      (ev.salePhases.length || (ev.ticketDate || '').trim())
+      (ev.salePhases.length || (ev.ticketDate || '').trim() || ev.uploadDeadline)
     );
     const overlay = el('reminderModalOverlay');
     if(!withDates.length){
@@ -2727,7 +2728,17 @@ async function loadReminderBanner(){
       return;
     }
     el('reminderList').innerHTML = withDates.map(ev => {
-      const timeText = ev.salePhases.length ? formatSalePhases(ev.salePhases) : ev.ticketDate;
+      const lines = [];
+      if(ev.uploadDeadline){
+        const d = new Date(ev.uploadDeadline);
+        lines.push(`📋 資料上傳截止：${d.toLocaleDateString('zh-TW')}`);
+      }
+      if(ev.salePhases.length){
+        lines.push(formatSalePhases(ev.salePhases));
+      }else if(ev.ticketDate){
+        lines.push(ev.ticketDate);
+      }
+      const timeText = lines.join('\n');
       return `
       <div class="reminder-item">
         <div class="reminder-title">${escapeHtml(ev.title || ev.event)}</div>
