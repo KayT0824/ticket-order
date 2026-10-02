@@ -1391,10 +1391,13 @@ function renderTable(list){
       ? `<td class="num-col">${priceCell}</td><td class="num-col">${subtotalCell}</td>`
       : '';
 
+    const dataTag = o.membershipRegUrl
+      ? ''
+      : `<span class="data-tag ${o.membershipDataUrl ? 'tag-yes' : 'tag-no'}">資料${o.membershipDataUrl ? '✓' : '—'}</span>`;
     const membershipCol = showMembershipCol
       ? `<td><div class="data-tags">
            <span class="data-tag ${o.membershipRegUrl ? 'tag-yes' : 'tag-no'}">登記${o.membershipRegUrl ? '✓' : '—'}</span>
-           <span class="data-tag ${o.membershipDataUrl ? 'tag-yes' : 'tag-no'}">資料${o.membershipDataUrl ? '✓' : '—'}</span>
+           ${dataTag}
          </div></td>`
       : '';
 
