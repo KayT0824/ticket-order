@@ -1044,6 +1044,7 @@
           <div id="transferRulesBox" style="display:none;background:#FFF6E5;border:1px solid #F0D9A0;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--ink);white-space:pre-line;"></div>
           <div class="hint" style="margin-bottom:0;">
             • 請上傳 Weverse 會員頁面的截圖（此欄為<span class="guide-highlight">非必填</span>，但會影響讓票順序）<br>
+            • 請上傳 Weverse 會員登錄(演唱會場次)的截圖（此欄為<span class="guide-highlight">非必填</span>，但會影響讓票順序）<br>
             • 會員編號只需露出開頭英文字母 <span class="guide-highlight">SE</span> + <span class="guide-highlight">4 碼數字</span>，後面全部馬賽克<br>
             • 截圖請加註浮水印，格式為<span class="guide-highlight">「群裡名稱＋上傳日期」</span><br>
             • 檔案格式：<span class="guide-highlight">JPG</span>，大小限制<span class="guide-highlight">1MB 以內</span>（手機截圖通常都在範圍內）<br>
@@ -1642,17 +1643,32 @@ function detachListeners(){
   if(indexListenerRef) indexListenerRef.off();
 }
 
+let rawOrdersList = [];
+
+function sortAndRenderOrders(){
+  const list = [...rawOrdersList];
+  const membershipFeatureOn = currentEnableMembershipReg || currentEnableMembershipData;
+  list.sort((a,b) => {
+    if(membershipFeatureOn){
+      const aHas = (a.membershipRegUrl || a.membershipDataUrl) ? 0 : 1;
+      const bHas = (b.membershipRegUrl || b.membershipDataUrl) ? 0 : 1;
+      if(aHas !== bHas) return aHas - bHas;
+    }
+    return (a.order || 0) - (b.order || 0);
+  });
+  ordersCache = list;
+  renderTable(list);
+  updateTotals(list);
+}
+
 function attachListeners(eventId){
   detachListeners();
 
   ordersListenerRef = db.ref(`events/${eventId}/orders`);
   ordersListenerRef.on('value', snap => {
     const val = snap.val() || {};
-    const list = Object.keys(val).map(k => val[k]);
-    list.sort((a,b) => (a.order || 0) - (b.order || 0));
-    ordersCache = list;
-    renderTable(list);
-    updateTotals(list);
+    rawOrdersList = Object.keys(val).map(k => val[k]);
+    sortAndRenderOrders();
   });
 
   volunteersListenerRef = db.ref(`events/${eventId}/volunteers`);
@@ -1704,6 +1720,7 @@ function attachListeners(eventId){
     renderMembershipToggleStatus();
     renderTransferRulesBox();
     renderUploadDeadlineTag();
+    sortAndRenderOrders();
   });
 }
 
