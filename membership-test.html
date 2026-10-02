@@ -845,18 +845,30 @@
 
         <div class="field-row">
           <div class="field" style="flex:1;">
-            <label>場次登錄範本圖網址</label>
-            <input id="inpExampleRegImg" type="text" placeholder="貼上圖片連結，例如 https://..." />
+            <label>場次登錄範本圖網址①（示意圖）</label>
+            <input id="inpExampleRegImg1" type="text" placeholder="貼上圖片連結，例如 https://..." />
           </div>
         </div>
         <div class="field-row" style="margin-top:10px;">
           <div class="field" style="flex:1;">
-            <label>會員資料範本圖網址</label>
-            <input id="inpExampleDataImg" type="text" placeholder="貼上圖片連結，例如 https://..." />
+            <label>場次登錄範本圖網址②（截圖步驟）</label>
+            <input id="inpExampleRegImg2" type="text" placeholder="貼上圖片連結，例如 https://..." />
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>會員資料範本圖網址①（示意圖）</label>
+            <input id="inpExampleDataImg1" type="text" placeholder="貼上圖片連結，例如 https://..." />
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>會員資料範本圖網址②（截圖步驟）</label>
+            <input id="inpExampleDataImg2" type="text" placeholder="貼上圖片連結，例如 https://..." />
           </div>
         </div>
         <button class="submit-btn" id="saveExampleImagesBtn" style="margin-top:10px;background:var(--ink-soft);">更新範本圖</button>
-        <div class="hint">這兩張範本圖會顯示在前台「展開說明」裡，幫大家對照怎麼上傳跟標示紅框重點。留空可以清除。</div>
+        <div class="hint">這四張範本圖會顯示在前台「展開說明」裡，場次登錄的兩張會放在一起、會員資料的兩張會放在一起，幫大家對照怎麼上傳跟標示紅框重點。留空可以清除單張。</div>
 
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
@@ -1082,15 +1094,21 @@
           </div>
 
           <div id="exampleImagesBox" style="margin-top:12px;display:none;">
-            <div class="hint" style="margin-bottom:6px;font-weight:600;">📎 範本參考圖（紅框處為請大家特別注意的地方）</div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <div id="exampleRegBox" style="display:none;text-align:center;">
-                <div class="review-thumb-label" style="margin-bottom:4px;">場次登錄範本</div>
-                <img id="exampleRegImg" src="" style="width:140px;border-radius:8px;border:1px solid var(--line-soft);cursor:pointer;" onclick="window.open(this.src, '_blank')" />
+            <div class="hint" style="margin-bottom:8px;font-weight:600;">📎 範本參考圖（紅框處為請大家特別注意的地方）</div>
+
+            <div id="exampleRegGroup" style="display:none;margin-bottom:12px;">
+              <div class="review-thumb-label" style="margin-bottom:4px;">場次登錄範本</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <img id="exampleRegImg1" src="" style="width:140px;border-radius:8px;border:1px solid var(--line-soft);cursor:pointer;display:none;" onclick="window.open(this.src, '_blank')" />
+                <img id="exampleRegImg2" src="" style="width:140px;border-radius:8px;border:1px solid var(--line-soft);cursor:pointer;display:none;" onclick="window.open(this.src, '_blank')" />
               </div>
-              <div id="exampleDataBox" style="display:none;text-align:center;">
-                <div class="review-thumb-label" style="margin-bottom:4px;">會員資料範本</div>
-                <img id="exampleDataImg" src="" style="width:140px;border-radius:8px;border:1px solid var(--line-soft);cursor:pointer;" onclick="window.open(this.src, '_blank')" />
+            </div>
+
+            <div id="exampleDataGroup" style="display:none;">
+              <div class="review-thumb-label" style="margin-bottom:4px;">會員資料範本</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <img id="exampleDataImg1" src="" style="width:140px;border-radius:8px;border:1px solid var(--line-soft);cursor:pointer;display:none;" onclick="window.open(this.src, '_blank')" />
+                <img id="exampleDataImg2" src="" style="width:140px;border-radius:8px;border:1px solid var(--line-soft);cursor:pointer;display:none;" onclick="window.open(this.src, '_blank')" />
               </div>
             </div>
           </div>
@@ -1205,8 +1223,10 @@ let currentEnableMembershipReg = false;
 let currentEnableMembershipData = false;
 let currentUploadDeadline = '';
 let currentTransferRules = '';
-let currentExampleRegImg = '';
-let currentExampleDataImg = '';
+let currentExampleRegImg1 = '';
+let currentExampleRegImg2 = '';
+let currentExampleDataImg1 = '';
+let currentExampleDataImg2 = '';
 let hasExpandedMembershipGuide = false;
 let currentVenue = '';
 let currentTicketPrice = '';
@@ -1768,8 +1788,10 @@ function attachListeners(eventId){
     currentEnableMembershipData = !!data.enableMembershipData;
     currentUploadDeadline = data.uploadDeadline || '';
     currentTransferRules = data.transferRules || '';
-    currentExampleRegImg = data.exampleRegImg || '';
-    currentExampleDataImg = data.exampleDataImg || '';
+    currentExampleRegImg1 = data.exampleRegImg1 || '';
+    currentExampleRegImg2 = data.exampleRegImg2 || '';
+    currentExampleDataImg1 = data.exampleDataImg1 || '';
+    currentExampleDataImg2 = data.exampleDataImg2 || '';
     renderDeadlineTag();
     applyLockState();
     applyStubBackground(currentBgImage, currentBgPosX, currentBgPosY, currentTextPos);
@@ -1796,26 +1818,28 @@ function renderTransferRulesBox(){
   }
 }
 
+function setExampleImg(imgId, url){
+  const img = el(imgId);
+  if(url){
+    img.src = url;
+    img.style.display = 'inline-block';
+  }else{
+    img.style.display = 'none';
+  }
+}
+
 function renderExampleImages(){
-  const regBox = el('exampleRegBox');
-  const dataBox = el('exampleDataBox');
   const wrap = el('exampleImagesBox');
 
-  if(currentExampleRegImg){
-    el('exampleRegImg').src = currentExampleRegImg;
-    regBox.style.display = 'block';
-  }else{
-    regBox.style.display = 'none';
-  }
+  setExampleImg('exampleRegImg1', currentExampleRegImg1);
+  setExampleImg('exampleRegImg2', currentExampleRegImg2);
+  el('exampleRegGroup').style.display = (currentExampleRegImg1 || currentExampleRegImg2) ? 'block' : 'none';
 
-  if(currentExampleDataImg){
-    el('exampleDataImg').src = currentExampleDataImg;
-    dataBox.style.display = 'block';
-  }else{
-    dataBox.style.display = 'none';
-  }
+  setExampleImg('exampleDataImg1', currentExampleDataImg1);
+  setExampleImg('exampleDataImg2', currentExampleDataImg2);
+  el('exampleDataGroup').style.display = (currentExampleDataImg1 || currentExampleDataImg2) ? 'block' : 'none';
 
-  wrap.style.display = (currentExampleRegImg || currentExampleDataImg) ? 'block' : 'none';
+  wrap.style.display = (currentExampleRegImg1 || currentExampleRegImg2 || currentExampleDataImg1 || currentExampleDataImg2) ? 'block' : 'none';
 }
 
 function renderPriceFieldState(){
@@ -2191,8 +2215,10 @@ async function openEventPanel(){
   renderPriceToggleStatus();
   renderMembershipToggleStatus();
   el('inpTransferRules').value = currentTransferRules;
-  el('inpExampleRegImg').value = currentExampleRegImg;
-  el('inpExampleDataImg').value = currentExampleDataImg;
+  el('inpExampleRegImg1').value = currentExampleRegImg1;
+  el('inpExampleRegImg2').value = currentExampleRegImg2;
+  el('inpExampleDataImg1').value = currentExampleDataImg1;
+  el('inpExampleDataImg2').value = currentExampleDataImg2;
   el('reviewerPinDisplay').textContent = REVIEWER_PIN;
   el('inpUploadDeadline').value = currentUploadDeadline ? new Date(currentUploadDeadline).toISOString().slice(0,10) : '';
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2289,11 +2315,15 @@ el('saveTransferRulesBtn').addEventListener('click', async () => {
 
 el('saveExampleImagesBtn').addEventListener('click', async () => {
   if(!unlockOrganizer()) return;
-  const regUrl = el('inpExampleRegImg').value.trim();
-  const dataUrl = el('inpExampleDataImg').value.trim();
+  const regUrl1 = el('inpExampleRegImg1').value.trim();
+  const regUrl2 = el('inpExampleRegImg2').value.trim();
+  const dataUrl1 = el('inpExampleDataImg1').value.trim();
+  const dataUrl2 = el('inpExampleDataImg2').value.trim();
   try{
-    await db.ref(`eventsIndex/${EVENT_ID}/exampleRegImg`).set(regUrl);
-    await db.ref(`eventsIndex/${EVENT_ID}/exampleDataImg`).set(dataUrl);
+    await db.ref(`eventsIndex/${EVENT_ID}/exampleRegImg1`).set(regUrl1);
+    await db.ref(`eventsIndex/${EVENT_ID}/exampleRegImg2`).set(regUrl2);
+    await db.ref(`eventsIndex/${EVENT_ID}/exampleDataImg1`).set(dataUrl1);
+    await db.ref(`eventsIndex/${EVENT_ID}/exampleDataImg2`).set(dataUrl2);
     setStatus('範本圖已更新！');
   }catch(e){
     setStatus('更新失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
