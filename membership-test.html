@@ -1194,6 +1194,7 @@ function unlockOrganizer(){
   el('eventTag').style.display = 'inline-block';
   el('organizerSection').style.display = 'block';
   el('unlockOrganizerBtn').style.display = 'none';
+  if(typeof sortAndRenderOrders === 'function'){ sortAndRenderOrders(); }
   return true;
 }
 
@@ -1328,13 +1329,17 @@ function renderTable(list){
       ? `<td><button class="approve-btn ${o.approved ? 'approved' : ''}" data-name="${escapeHtml(o.name)}">${o.approved ? '✅ 已審核' : '⬜ 未審核'}</button></td>`
       : '';
 
+    const rankCell = isOrganizerMode
+      ? `<div class="rank-controls">
+           <button class="move-btn" data-idx="${idx}" data-dir="up" ${isFirst ? 'disabled' : ''}>▲</button>
+           <span class="rank-num">${idx + 1}</span>
+           <button class="move-btn" data-idx="${idx}" data-dir="down" ${isLast ? 'disabled' : ''}>▼</button>
+         </div>`
+      : `<span class="rank-num">${idx + 1}</span>`;
+
     return `<tr class="${rowCls}">
       <td class="rank-cell">
-        <div class="rank-controls">
-          <button class="move-btn" data-idx="${idx}" data-dir="up" ${isFirst ? 'disabled' : ''}>▲</button>
-          <span class="rank-num">${idx + 1}</span>
-          <button class="move-btn" data-idx="${idx}" data-dir="down" ${isLast ? 'disabled' : ''}>▼</button>
-        </div>
+        ${rankCell}
       </td>
       <td class="name-cell">${escapeHtml(o.name)}</td>
       <td>
