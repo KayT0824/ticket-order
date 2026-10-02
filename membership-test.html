@@ -1096,7 +1096,7 @@
   <div class="card list-card">
     <div class="card-header-row">
       <h2>大家的登記</h2>
-      <button class="export-btn" id="exportBtn">匯出 Excel</button>
+      <button class="export-btn" id="exportBtn" style="display:none;">匯出 Excel</button>
     </div>
     <div id="statusSummary" class="status-summary" style="display:none;"></div>
     <div id="tableWrap"><div class="empty-state">載入中…</div></div>
@@ -1194,6 +1194,7 @@ function unlockOrganizer(){
   el('eventTag').style.display = 'inline-block';
   el('organizerSection').style.display = 'block';
   el('unlockOrganizerBtn').style.display = 'none';
+  el('exportBtn').style.display = 'inline-block';
   if(typeof sortAndRenderOrders === 'function'){ sortAndRenderOrders(); }
   return true;
 }
