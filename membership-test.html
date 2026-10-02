@@ -1477,7 +1477,7 @@ function updateTotals(list){
   el('sumPeople').textContent = totalPeople;
 
   const noteEl = el('unpricedNote');
-  noteEl.textContent = unpricedCount ? `金額總計不含 ${unpricedCount} 位「不限金額」的登記` : '';
+  noteEl.textContent = (unpricedCount && !currentPriceDisabled) ? `金額總計不含 ${unpricedCount} 位「不限金額」的登記` : '';
 }
 
 // ---- 志工 ----
