@@ -274,6 +274,17 @@
     margin:0 0 14px;
     color:var(--ink);
   }
+  .primary-card{
+    border:2px solid var(--gold);
+    background:linear-gradient(180deg, #FFFBF0 0%, var(--card) 120px);
+    box-shadow:0 4px 16px rgba(232,162,61,0.18);
+  }
+  .primary-card-title{
+    font-size:19px !important;
+    font-weight:700;
+    color:var(--ink) !important;
+    margin-bottom:16px !important;
+  }
   .field-row{
     display:flex;
     gap:10px;
@@ -511,6 +522,33 @@
   .status-btn.status-need{background:#FBEAE8;border-color:#F0BDB8;color:var(--stamp);}
   tr.row-got{background:#F6FBF7;}
   tr.row-need{background:#FEF6F5;}
+  .data-tags{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .data-tag{
+    font-size:10.5px;
+    font-weight:600;
+    padding:2px 6px;
+    border-radius:6px;
+    white-space:nowrap;
+    display:inline-block;
+  }
+  .data-tag.tag-yes{background:#E3F4E8;color:#1E7A3C;}
+  .data-tag.tag-no{background:#F2F3F5;color:var(--ink-soft);}
+  .approve-btn{
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:5px 10px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+    background:#fff;
+    color:var(--ink-soft);
+  }
+  .approve-btn.approved{background:#E3F4E8;border-color:#BEE4C9;color:#1E7A3C;}
   .volunteer-list{
     display:flex;
     flex-wrap:wrap;
@@ -760,9 +798,26 @@
 
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
-        <div class="hint" style="margin-bottom:8px;">🪪 這個場次是否需要上傳會員資格:<strong id="membershipToggleStatusTag">讀取中…</strong></div>
-        <button class="submit-btn" id="toggleMembershipBtn" style="background:var(--ink-soft);">開啟會員資格上傳</button>
-        <div class="hint">開啟後，大家填寫登記時必須同時上傳一張會員資格截圖才能送出。圖片存在 Firebase Storage，不會拖慢登記清單的讀取速度。</div>
+        <div class="hint" style="margin-bottom:8px;">🪪 Weverse 會員登記 上傳欄位:<strong id="membershipRegToggleStatusTag">讀取中…</strong></div>
+        <button class="submit-btn" id="toggleMembershipRegBtn" style="background:var(--ink-soft);">開啟「會員登記」上傳欄位</button>
+        <div class="hint">開啟後，前台會多一個「上傳 Weverse 會員登記截圖」的欄位（非必填，但會影響讓票順序）。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="hint" style="margin-bottom:8px;">🪪 Weverse 會員資料 上傳欄位:<strong id="membershipDataToggleStatusTag">讀取中…</strong></div>
+        <button class="submit-btn" id="toggleMembershipDataBtn" style="background:var(--ink-soft);">開啟「會員資料」上傳欄位</button>
+        <div class="hint">開啟後，前台會多一個「上傳 Weverse 會員資料截圖」的欄位（非必填）。兩個上傳欄位可以各自獨立開關，圖片都存在 Firebase Storage，不會拖慢登記清單的讀取速度。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
+        <div class="hint" style="margin-bottom:8px;">⏰ 資料上傳截止時間:<strong id="uploadDeadlineTag">尚未設定</strong></div>
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <input id="inpUploadDeadline" type="date" />
+          </div>
+        </div>
+        <button class="submit-btn" id="saveUploadDeadlineBtn" style="margin-top:10px;background:var(--ink-soft);">更新上傳截止時間</button>
+        <div class="hint">超過這個時間後，前台的「上傳須知」跟兩個上傳欄位都會消失，但大家還是可以正常登記姓名跟張數，不受影響。留空並送出可以清除這個截止時間。</div>
 
         <div class="field-row" style="margin-top:10px;">
           <div class="field" style="flex:1;">
@@ -949,13 +1004,13 @@
     <div id="volunteerList" class="volunteer-list"></div>
   </div>
 
-  <div class="card" id="registerCard">
+  <div class="card primary-card" id="registerCard">
     <div class="deadline-note">
       <span class="deadline-tag" id="deadlineTag">尚未設定截止時間</span>
       <button class="stub-edit" id="editDeadlineBtn" style="display:none;">設定截止時間🔒</button>
       <span class="event-tag-inline" id="eventTag" style="display:none;"></span>
     </div>
-    <h2>填寫我的登記</h2>
+    <h2 class="primary-card-title">📝 填寫我的登記</h2>
     <div class="field-row">
       <div class="field name">
         <label>姓名</label>
@@ -978,32 +1033,44 @@
     <div id="membershipWrap" style="display:none;">
       <div style="height:1px;background:var(--line-soft);margin:14px 0;"></div>
 
-      <div class="card-header-row" style="margin-bottom:0;">
-        <div style="font-size:12px;color:var(--ink-soft);font-weight:600;">📋 會員資格上傳須知</div>
-        <button class="export-btn" id="toggleMembershipGuideBtn">展開說明</button>
-      </div>
-      <div id="membershipGuideBody" style="display:none;margin-top:10px;">
-        <div id="transferRulesBox" style="display:none;background:#FFF6E5;border:1px solid #F0D9A0;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--ink);white-space:pre-line;"></div>
-        <div class="hint" style="margin-bottom:0;">
-          • 請上傳 Weverse 會員頁面的截圖<br>
-          • 上傳前請自行<span class="guide-highlight">馬賽克遮蓋會員編號中間幾碼</span>，只保留頭尾各 3 碼方便核對<br>
-          • 建議在截圖加註浮水印（例如暱稱＋今天日期），避免圖片被盜用<br>
-          • 檔案格式：<span class="guide-highlight">JPG</span>，大小限制 <span class="guide-highlight">1MB 以內</span>（手機截圖通常都在範圍內）<br>
-          • 這張圖片只有主辦人在審核/匯出資料時看得到，不會顯示在下方公開的登記清單裡
-        </div>
-      </div>
-      <label class="price-check" style="margin-top:10px;">
-        <input type="checkbox" id="inpMembershipAck" />
-        我已閱讀以上上傳須知
-      </label>
+      <div id="membershipDeadlinePassedNote" class="hint" style="display:none;color:var(--stamp);font-weight:600;"></div>
 
-      <div class="field-row" style="margin-top:10px;">
-        <div class="field" style="flex:1;">
-          <label>上傳會員資格截圖（JPG，1MB 以內）</label>
-          <input id="inpMembershipFile" type="file" accept="image/jpeg,image/jpg" disabled />
+      <div id="membershipActiveSection">
+        <div class="card-header-row" style="margin-bottom:0;">
+          <div style="font-size:12px;color:var(--ink-soft);font-weight:600;">📋 會員資料上傳須知</div>
+          <button class="export-btn" id="toggleMembershipGuideBtn">展開說明</button>
         </div>
+        <div id="membershipGuideBody" style="display:none;margin-top:10px;">
+          <div id="transferRulesBox" style="display:none;background:#FFF6E5;border:1px solid #F0D9A0;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--ink);white-space:pre-line;"></div>
+          <div class="hint" style="margin-bottom:0;">
+            • 請上傳 Weverse 會員頁面的截圖（此欄為<span class="guide-highlight">非必填</span>，但會影響讓票順序）<br>
+            • 會員編號只需露出開頭英文字母 <span class="guide-highlight">SE</span> + <span class="guide-highlight">4 碼數字</span>，後面全部馬賽克<br>
+            • 截圖請加註浮水印，格式為<span class="guide-highlight">「群裡名稱＋上傳日期」</span><br>
+            • 檔案格式：<span class="guide-highlight">JPG</span>，大小限制<span class="guide-highlight">1MB 以內</span>（手機截圖通常都在範圍內）<br>
+            • 這些圖片只有主辦人/審核人員看得到，不會顯示在下方公開的登記清單裡（清單只會顯示「有沒有上傳」）
+          </div>
+        </div>
+        <label class="price-check" style="margin-top:10px;">
+          <input type="checkbox" id="inpMembershipAck" disabled />
+          我已閱讀以上上傳須知
+        </label>
+
+        <div id="membershipRegFieldWrap" class="field-row" style="margin-top:10px;display:none;">
+          <div class="field" style="flex:1;">
+            <label>上傳 Weverse 會員登記截圖（非必填）</label>
+            <input id="inpMembershipRegFile" type="file" accept="image/jpeg,image/jpg" disabled />
+          </div>
+        </div>
+        <div class="hint" id="membershipRegFileHint"></div>
+
+        <div id="membershipDataFieldWrap" class="field-row" style="margin-top:10px;display:none;">
+          <div class="field" style="flex:1;">
+            <label>上傳 Weverse 會員資料截圖（非必填）</label>
+            <input id="inpMembershipDataFile" type="file" accept="image/jpeg,image/jpg" disabled />
+          </div>
+        </div>
+        <div class="hint" id="membershipDataFileHint"></div>
       </div>
-      <div class="hint" id="membershipFileHint"></div>
     </div>
 
     <button class="submit-btn" id="submitBtn">送出 / 更新我的登記</button>
@@ -1089,8 +1156,11 @@ let currentSalePhases = [];
 let currentEventDate = '';
 let currentArchived = false;
 let currentPriceDisabled = false;
-let currentRequireMembership = false;
+let currentEnableMembershipReg = false;
+let currentEnableMembershipData = false;
+let currentUploadDeadline = '';
 let currentTransferRules = '';
+let hasExpandedMembershipGuide = false;
 let currentVenue = '';
 let currentTicketPrice = '';
 let currentLinks = '';
@@ -1216,6 +1286,9 @@ function renderTable(list){
     'need': { label: '❌ 缺票', cls: 'status-need' }
   };
 
+  const showPriceCols = !currentPriceDisabled;
+  const showMembershipCol = currentEnableMembershipReg || currentEnableMembershipData;
+
   let rows = list.map((o, idx) => {
     const hasPrice = o.price !== null && o.price !== undefined;
     const priceCell = hasPrice ? fmtMoney(o.price) : '<span class="no-price-tag">不限金額</span>';
@@ -1225,6 +1298,22 @@ function renderTable(list){
     const status = o.status || '';
     const statusInfo = statusMap[status] || statusMap[''];
     const rowCls = status ? `row-${status}` : '';
+
+    const priceCols = showPriceCols
+      ? `<td class="num-col">${priceCell}</td><td class="num-col">${subtotalCell}</td>`
+      : '';
+
+    const membershipCol = showMembershipCol
+      ? `<td><div class="data-tags">
+           <span class="data-tag ${o.membershipRegUrl ? 'tag-yes' : 'tag-no'}">登記${o.membershipRegUrl ? '✓' : '—'}</span>
+           <span class="data-tag ${o.membershipDataUrl ? 'tag-yes' : 'tag-no'}">資料${o.membershipDataUrl ? '✓' : '—'}</span>
+         </div></td>`
+      : '';
+
+    const approveCol = showMembershipCol
+      ? `<td><button class="approve-btn ${o.approved ? 'approved' : ''}" data-name="${escapeHtml(o.name)}">${o.approved ? '✅ 已審核' : '⬜ 未審核'}</button></td>`
+      : '';
+
     return `<tr class="${rowCls}">
       <td class="rank-cell">
         <div class="rank-controls">
@@ -1238,14 +1327,19 @@ function renderTable(list){
         <button class="status-btn ${statusInfo.cls}" data-name="${escapeHtml(o.name)}">${statusInfo.label}</button>
       </td>
       <td class="num-col">${o.qty}</td>
-      <td class="num-col">${priceCell}</td>
-      <td class="num-col">${subtotalCell}</td>
+      ${priceCols}
+      ${membershipCol}
+      ${approveCol}
       <td style="text-align:right;white-space:nowrap;">
         <button class="edit-btn" data-name="${escapeHtml(o.name)}">編輯</button>
         <button class="del-btn" data-name="${escapeHtml(o.name)}">刪除</button>
       </td>
     </tr>`;
   }).join('');
+
+  const priceHeaders = showPriceCols ? `<th class="num-col">單張金額</th><th class="num-col">小計</th>` : '';
+  const membershipHeader = showMembershipCol ? `<th>上傳資料</th>` : '';
+  const approveHeader = showMembershipCol ? `<th>審核</th>` : '';
 
   tableWrap.innerHTML = `<div class="table-scroll"><table>
     <thead>
@@ -1254,8 +1348,9 @@ function renderTable(list){
         <th>姓名</th>
         <th>搶票狀態</th>
         <th class="num-col">張數</th>
-        <th class="num-col">單張金額</th>
-        <th class="num-col">小計</th>
+        ${priceHeaders}
+        ${membershipHeader}
+        ${approveHeader}
         <th></th>
       </tr>
     </thead>
@@ -1270,6 +1365,26 @@ function renderTable(list){
       const next = current === '' ? 'got' : (current === 'got' ? 'need' : '');
       updateOrderStatusAPI(name, next).catch(() => {
         setStatus('狀態更新失敗，請再試一次', true);
+      });
+    });
+  });
+
+  tableWrap.querySelectorAll('.approve-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(!isReviewerUnlocked){
+        const pin = prompt('請輸入主辦人或審核密碼：');
+        if(pin === null) return;
+        if(pin !== REVIEWER_PIN && pin !== ORGANIZER_PIN){
+          alert('密碼錯誤');
+          return;
+        }
+        isReviewerUnlocked = true;
+      }
+      const name = btn.getAttribute('data-name');
+      const entry = list.find(o => o.name === name);
+      const next = !(entry && entry.approved);
+      updateOrderApprovalAPI(name, next).catch(() => {
+        setStatus('審核狀態更新失敗，請再試一次', true);
       });
     });
   });
@@ -1403,14 +1518,20 @@ async function upsertOrderAPI(entry){
     price: (entry.price === null || entry.price === undefined) ? null : entry.price,
     order: entry.order,
     status: entry.status || '',
-    membershipUrl: entry.membershipUrl || '',
+    approved: !!entry.approved,
+    membershipRegUrl: entry.membershipRegUrl || '',
+    membershipDataUrl: entry.membershipDataUrl || '',
     ts: entry.ts || Date.now()
   });
 }
 
-async function uploadMembershipFile(name, file){
+async function updateOrderApprovalAPI(name, approved){
+  await db.ref(`events/${EVENT_ID}/orders/${sanitizeKey(name)}`).update({ approved });
+}
+
+async function uploadMembershipFile(name, file, folder){
   const key = sanitizeKey(name);
-  const ref = storage.ref(`events/${EVENT_ID}/membership/${key}.jpg`);
+  const ref = storage.ref(`events/${EVENT_ID}/${folder}/${key}.jpg`);
   await ref.put(file);
   return await ref.getDownloadURL();
 }
@@ -1568,7 +1689,9 @@ function attachListeners(eventId){
     currentLinks = data.links || '';
     currentArchived = !!data.archived;
     currentPriceDisabled = !!data.priceDisabled;
-    currentRequireMembership = !!data.requireMembership;
+    currentEnableMembershipReg = !!data.enableMembershipReg;
+    currentEnableMembershipData = !!data.enableMembershipData;
+    currentUploadDeadline = data.uploadDeadline || '';
     currentTransferRules = data.transferRules || '';
     renderDeadlineTag();
     applyLockState();
@@ -1580,6 +1703,7 @@ function attachListeners(eventId){
     renderMembershipFieldState();
     renderMembershipToggleStatus();
     renderTransferRulesBox();
+    renderUploadDeadlineTag();
   });
 }
 
@@ -1602,27 +1726,66 @@ function renderPriceFieldState(){
   }
 }
 
+function isUploadDeadlinePassed(){
+  if(!currentUploadDeadline) return false;
+  return Date.now() > new Date(currentUploadDeadline).getTime();
+}
+
 function renderMembershipFieldState(){
   const wrap = el('membershipWrap');
-  wrap.style.display = currentRequireMembership ? 'block' : 'none';
-  if(!currentRequireMembership){
-    el('inpMembershipAck').checked = false;
-    el('inpMembershipFile').disabled = true;
-    el('inpMembershipFile').value = '';
-    el('membershipFileHint').textContent = '';
+  const anyEnabled = currentEnableMembershipReg || currentEnableMembershipData;
+  wrap.style.display = anyEnabled ? 'block' : 'none';
+  if(!anyEnabled) return;
+
+  const deadlinePassed = isUploadDeadlinePassed();
+  const note = el('membershipDeadlinePassedNote');
+  const active = el('membershipActiveSection');
+
+  if(deadlinePassed){
+    const d = new Date(currentUploadDeadline);
+    note.textContent = `⏰ 資料上傳已於 ${d.toLocaleDateString('zh-TW')} 截止，無法再上傳，但姓名與張數仍可正常登記。`;
+    note.style.display = 'block';
+    active.style.display = 'none';
+    return;
   }
+  note.style.display = 'none';
+  active.style.display = 'block';
+
+  el('membershipRegFieldWrap').style.display = currentEnableMembershipReg ? 'flex' : 'none';
+  el('membershipDataFieldWrap').style.display = currentEnableMembershipData ? 'flex' : 'none';
 }
 
 function renderMembershipToggleStatus(){
-  const tag = el('membershipToggleStatusTag');
-  const btn = el('toggleMembershipBtn');
-  if(currentRequireMembership){
-    tag.textContent = '需要（大家登記時必須上傳截圖）';
-    btn.textContent = '關閉會員資格上傳';
+  const regTag = el('membershipRegToggleStatusTag');
+  const regBtn = el('toggleMembershipRegBtn');
+  if(currentEnableMembershipReg){
+    regTag.textContent = '已開啟';
+    regBtn.textContent = '關閉「會員登記」上傳欄位';
   }else{
-    tag.textContent = '不需要';
-    btn.textContent = '開啟會員資格上傳';
+    regTag.textContent = '未開啟';
+    regBtn.textContent = '開啟「會員登記」上傳欄位';
   }
+
+  const dataTag = el('membershipDataToggleStatusTag');
+  const dataBtn = el('toggleMembershipDataBtn');
+  if(currentEnableMembershipData){
+    dataTag.textContent = '已開啟';
+    dataBtn.textContent = '關閉「會員資料」上傳欄位';
+  }else{
+    dataTag.textContent = '未開啟';
+    dataBtn.textContent = '開啟「會員資料」上傳欄位';
+  }
+}
+
+function renderUploadDeadlineTag(){
+  const tag = el('uploadDeadlineTag');
+  if(!currentUploadDeadline){
+    tag.textContent = '尚未設定';
+    return;
+  }
+  const d = new Date(currentUploadDeadline);
+  const label = d.toLocaleDateString('zh-TW');
+  tag.textContent = isUploadDeadlinePassed() ? `${label}（已截止）` : label;
 }
 
 function normalizeSalePhases(raw){
@@ -1700,20 +1863,22 @@ el('submitBtn').addEventListener('click', async () => {
     ? ordersCache.find(o => o.name === editingOriginalName)
     : ordersCache.find(o => o.name === name);
 
-  let membershipFile = null;
-  if(currentRequireMembership){
+  const membershipActive = (currentEnableMembershipReg || currentEnableMembershipData) && !isUploadDeadlinePassed();
+  let regFile = null;
+  let dataFile = null;
+  if(membershipActive){
     if(!el('inpMembershipAck').checked){
-      setStatus('請先閱讀並勾選「我已閱讀以上上傳須知」', true);
+      setStatus('請先展開並閱讀上傳須知，再勾選「我已閱讀以上上傳須知」', true);
       return;
     }
-    membershipFile = el('inpMembershipFile').files[0] || null;
-    const hasExisting = baseEntry && baseEntry.membershipUrl;
-    if(!membershipFile && !hasExisting){
-      setStatus('這個場次需要上傳會員資格截圖才能送出', true);
+    regFile = currentEnableMembershipReg ? (el('inpMembershipRegFile').files[0] || null) : null;
+    dataFile = currentEnableMembershipData ? (el('inpMembershipDataFile').files[0] || null) : null;
+    if(regFile && regFile.size > MEMBERSHIP_MAX_BYTES){
+      setStatus('會員登記截圖超過 1MB，請壓縮後再上傳', true);
       return;
     }
-    if(membershipFile && membershipFile.size > MEMBERSHIP_MAX_BYTES){
-      setStatus('會員資格截圖超過 1MB，請壓縮後再上傳', true);
+    if(dataFile && dataFile.size > MEMBERSHIP_MAX_BYTES){
+      setStatus('會員資料截圖超過 1MB，請壓縮後再上傳', true);
       return;
     }
   }
@@ -1721,11 +1886,15 @@ el('submitBtn').addEventListener('click', async () => {
   const maxOrder = ordersCache.reduce((m,o) => Math.max(m, o.order || 0), 0);
   const orderVal = baseEntry ? baseEntry.order : maxOrder + 1;
 
-  setStatus(membershipFile ? '上傳截圖中…' : '送出中…');
+  setStatus((regFile || dataFile) ? '上傳截圖中…' : '送出中…');
   try{
-    let membershipUrl = (baseEntry && baseEntry.membershipUrl) || '';
-    if(membershipFile){
-      membershipUrl = await uploadMembershipFile(name, membershipFile);
+    let membershipRegUrl = (baseEntry && baseEntry.membershipRegUrl) || '';
+    let membershipDataUrl = (baseEntry && baseEntry.membershipDataUrl) || '';
+    if(regFile){
+      membershipRegUrl = await uploadMembershipFile(name, regFile, 'membershipReg');
+    }
+    if(dataFile){
+      membershipDataUrl = await uploadMembershipFile(name, dataFile, 'membershipData');
     }
 
     const newEntry = {
@@ -1733,7 +1902,9 @@ el('submitBtn').addEventListener('click', async () => {
       price: noPrice ? null : price,
       order: orderVal,
       status: (baseEntry && baseEntry.status) || '',
-      membershipUrl,
+      approved: (baseEntry && baseEntry.approved) || false,
+      membershipRegUrl,
+      membershipDataUrl,
       ts: Date.now()
     };
 
@@ -1744,11 +1915,14 @@ el('submitBtn').addEventListener('click', async () => {
     }
     editingOriginalName = null;
     el('cancelEditBtn').style.display = 'none';
-    if(currentRequireMembership){
+    if(membershipActive){
       el('inpMembershipAck').checked = false;
-      el('inpMembershipFile').disabled = true;
-      el('inpMembershipFile').value = '';
-      el('membershipFileHint').textContent = '';
+      el('inpMembershipRegFile').disabled = true;
+      el('inpMembershipRegFile').value = '';
+      el('membershipRegFileHint').textContent = '';
+      el('inpMembershipDataFile').disabled = true;
+      el('inpMembershipDataFile').value = '';
+      el('membershipDataFileHint').textContent = '';
     }
     setStatus('已送出，感謝登記！');
   }catch(e){
@@ -1833,7 +2007,9 @@ el('exportBtn').addEventListener('click', async () => {
       '張數': o.qty,
       '單張願付金額': hasPrice ? o.price : '不限金額',
       '小計': hasPrice ? o.qty * o.price : '不限金額',
-      '會員資格截圖': o.membershipUrl || '未提供',
+      '會員登記截圖': o.membershipRegUrl || '未提供',
+      '會員資料截圖': o.membershipDataUrl || '未提供',
+      '審核狀態': o.approved ? '已審核' : '未審核',
       '登記時間': new Date(o.ts).toLocaleString('zh-TW')
     };
   });
@@ -1844,7 +2020,7 @@ el('exportBtn').addEventListener('click', async () => {
   rows.push({ '姓名': '總計', '張數': totalQty, '單張願付金額': '', '小計': totalAmount, '登記時間': '' });
 
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{wch:6},{wch:14},{wch:10},{wch:8},{wch:14},{wch:12},{wch:40},{wch:20}];
+  ws['!cols'] = [{wch:6},{wch:14},{wch:10},{wch:8},{wch:14},{wch:12},{wch:40},{wch:40},{wch:10},{wch:20}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '購票登記');
 
@@ -1915,6 +2091,7 @@ async function openEventPanel(){
   renderMembershipToggleStatus();
   el('inpTransferRules').value = currentTransferRules;
   el('reviewerPinDisplay').textContent = REVIEWER_PIN;
+  el('inpUploadDeadline').value = currentUploadDeadline ? new Date(currentUploadDeadline).toISOString().slice(0,10) : '';
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -1953,14 +2130,46 @@ el('togglePriceFieldBtn').addEventListener('click', async () => {
   }
 });
 
-el('toggleMembershipBtn').addEventListener('click', async () => {
+el('toggleMembershipRegBtn').addEventListener('click', async () => {
   if(!unlockOrganizer()) return;
-  const newState = !currentRequireMembership;
+  const newState = !currentEnableMembershipReg;
   try{
-    await db.ref(`eventsIndex/${EVENT_ID}/requireMembership`).set(newState);
-    setStatus(newState ? '已開啟會員資格上傳！' : '已關閉會員資格上傳！');
+    await db.ref(`eventsIndex/${EVENT_ID}/enableMembershipReg`).set(newState);
+    setStatus(newState ? '已開啟「會員登記」上傳欄位！' : '已關閉「會員登記」上傳欄位！');
   }catch(e){
     setStatus('操作失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
+  }
+});
+
+el('toggleMembershipDataBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  const newState = !currentEnableMembershipData;
+  try{
+    await db.ref(`eventsIndex/${EVENT_ID}/enableMembershipData`).set(newState);
+    setStatus(newState ? '已開啟「會員資料」上傳欄位！' : '已關閉「會員資料」上傳欄位！');
+  }catch(e){
+    setStatus('操作失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
+  }
+});
+
+el('saveUploadDeadlineBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  const trimmed = el('inpUploadDeadline').value.trim();
+  try{
+    if(!trimmed){
+      await db.ref(`eventsIndex/${EVENT_ID}/uploadDeadline`).set('');
+      setStatus('已清除上傳截止時間！');
+      return;
+    }
+    const parsed = new Date(`${trimmed}T23:59:59`);
+    if(isNaN(parsed.getTime())){
+      setStatus('日期格式看起來不太對', true);
+      return;
+    }
+    await db.ref(`eventsIndex/${EVENT_ID}/uploadDeadline`).set(parsed.toISOString());
+    setStatus('上傳截止時間已更新！');
+  }catch(e){
+    setStatus('更新失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
   }
 });
 
@@ -1981,24 +2190,39 @@ el('toggleMembershipGuideBtn').addEventListener('click', () => {
   const isHidden = body.style.display === 'none';
   body.style.display = isHidden ? 'block' : 'none';
   btn.textContent = isHidden ? '收合說明' : '展開說明';
+  if(isHidden){
+    hasExpandedMembershipGuide = true;
+    el('inpMembershipAck').disabled = false;
+  }
 });
 
 el('inpMembershipAck').addEventListener('change', () => {
-  el('inpMembershipFile').disabled = !el('inpMembershipAck').checked;
+  const checked = el('inpMembershipAck').checked;
+  el('inpMembershipRegFile').disabled = !checked;
+  el('inpMembershipDataFile').disabled = !checked;
 });
 
-el('inpMembershipFile').addEventListener('change', () => {
-  const file = el('inpMembershipFile').files[0];
-  const hint = el('membershipFileHint');
+function validateMembershipFileInput(fileInputId, hintId){
+  const input = el(fileInputId);
+  const hint = el(hintId);
+  const file = input.files[0];
   if(!file){ hint.textContent = ''; return; }
   if(file.size > MEMBERSHIP_MAX_BYTES){
     hint.textContent = `⚠️ 檔案太大（${(file.size/1024/1024).toFixed(2)}MB），請壓縮到 1MB 以內再重新選取`;
     hint.style.color = 'var(--stamp)';
-    el('inpMembershipFile').value = '';
+    input.value = '';
   }else{
     hint.textContent = `已選擇：${file.name}（${(file.size/1024).toFixed(0)}KB）`;
     hint.style.color = 'var(--ink-soft)';
   }
+}
+
+el('inpMembershipRegFile').addEventListener('change', () => {
+  validateMembershipFileInput('inpMembershipRegFile', 'membershipRegFileHint');
+});
+
+el('inpMembershipDataFile').addEventListener('change', () => {
+  validateMembershipFileInput('inpMembershipDataFile', 'membershipDataFileHint');
 });
 
 el('copyFixedLinkBtn').addEventListener('click', async () => {
@@ -2254,6 +2478,19 @@ function resetRegisterForm(){
   el('inpVolunteer').value = '';
   editingOriginalName = null;
   el('cancelEditBtn').style.display = 'none';
+
+  hasExpandedMembershipGuide = false;
+  el('membershipGuideBody').style.display = 'none';
+  el('toggleMembershipGuideBtn').textContent = '展開說明';
+  el('inpMembershipAck').checked = false;
+  el('inpMembershipAck').disabled = true;
+  el('inpMembershipRegFile').disabled = true;
+  el('inpMembershipRegFile').value = '';
+  el('membershipRegFileHint').textContent = '';
+  el('inpMembershipDataFile').disabled = true;
+  el('inpMembershipDataFile').value = '';
+  el('membershipDataFileHint').textContent = '';
+
   setStatus('');
 }
 
@@ -2346,18 +2583,36 @@ function renderReviewList(){
     return;
   }
   listEl.innerHTML = list.map(o => {
-    const thumb = o.membershipUrl
-      ? `<img src="${o.membershipUrl}" loading="lazy" alt="${escapeHtml(o.name)} 的會員截圖" onclick="window.open('${o.membershipUrl}', '_blank')" />`
-      : `<div class="review-no-img">未上傳</div>`;
+    const regThumb = o.membershipRegUrl
+      ? `<img src="${o.membershipRegUrl}" loading="lazy" alt="${escapeHtml(o.name)} 的會員登記截圖" onclick="window.open('${o.membershipRegUrl}', '_blank')" />`
+      : `<div class="review-no-img">登記<br>未上傳</div>`;
+    const dataThumb = o.membershipDataUrl
+      ? `<img src="${o.membershipDataUrl}" loading="lazy" alt="${escapeHtml(o.name)} 的會員資料截圖" onclick="window.open('${o.membershipDataUrl}', '_blank')" />`
+      : `<div class="review-no-img">資料<br>未上傳</div>`;
     return `
       <div class="review-item">
-        ${thumb}
+        ${regThumb}
+        ${dataThumb}
         <div class="review-info">
           <div class="rname">${escapeHtml(o.name)}</div>
           <div class="rqty">張數：${o.qty}</div>
+          <button class="approve-btn ${o.approved ? 'approved' : ''}" data-name="${escapeHtml(o.name)}" style="margin-top:6px;">${o.approved ? '✅ 已審核' : '⬜ 未審核'}</button>
         </div>
       </div>`;
   }).join('');
+
+  listEl.querySelectorAll('.approve-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.getAttribute('data-name');
+      const entry = list.find(o => o.name === name);
+      const next = !(entry && entry.approved);
+      updateOrderApprovalAPI(name, next).then(() => {
+        renderReviewList();
+      }).catch(() => {
+        setStatus('審核狀態更新失敗，請再試一次', true);
+      });
+    });
+  });
 }
 
 el('openMembershipReviewBtn').addEventListener('click', () => {
