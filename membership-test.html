@@ -843,6 +843,23 @@
 
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>場次登錄範本圖網址</label>
+            <input id="inpExampleRegImg" type="text" placeholder="貼上圖片連結，例如 https://..." />
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1;">
+            <label>會員資料範本圖網址</label>
+            <input id="inpExampleDataImg" type="text" placeholder="貼上圖片連結，例如 https://..." />
+          </div>
+        </div>
+        <button class="submit-btn" id="saveExampleImagesBtn" style="margin-top:10px;background:var(--ink-soft);">更新範本圖</button>
+        <div class="hint">這兩張範本圖會顯示在前台「展開說明」裡，幫大家對照怎麼上傳跟標示紅框重點。留空可以清除。</div>
+
+        <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
+
         <div class="hint">🔍 想請人協助審核會員資格，不用給主辦人密碼——請對方在前台點「會員資格審核」，輸入審核密碼即可（目前審核密碼是 <strong id="reviewerPinDisplay"></strong>，可在程式碼裡搜尋 REVIEWER_PIN 修改）。</div>
 
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
@@ -1056,26 +1073,32 @@
         <div id="membershipGuideBody" style="display:none;margin-top:10px;">
           <div id="transferRulesBox" style="display:none;background:#FFF6E5;border:1px solid #F0D9A0;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--ink);white-space:pre-line;"></div>
           <div class="hint" style="margin-bottom:0;">
-            • 請上傳 Weverse 會員頁面的截圖（此欄為<span class="guide-highlight">非必填</span>，但會影響讓票順序）<br>
-            • 請上傳 Weverse 會員(場次)登記截圖（此欄為<span class="guide-highlight">非必填</span>，但會影響讓票順序）<br>
-            • 會員編號只需露出開頭英文字母 <span class="guide-highlight">SE</span> + <span class="guide-highlight">4 碼數字</span>，後面全部馬賽克<br>
-            • 截圖請加註浮水印，格式為<span class="guide-highlight">「群裡名稱＋上傳日期」</span><br>
-            • 檔案格式：<span class="guide-highlight">JPG</span>，大小限制<span class="guide-highlight">1MB 以內</span>（手機截圖通常都在範圍內）<br>
+            • 請上傳 Weverse 會員登錄(演唱會場次)的截圖（此欄為非必填，但會影響讓票順序）<br>
+            • 請上傳 Weverse 會員頁面的截圖（此欄為非必填，但會影響讓票順序）<br>
+            • 會員資料需保留開頭英文字母 <span class="guide-highlight">SE + 最後4 碼數字</span>，中間數字馬賽克，<span class="guide-highlight">會員有效時間</span>(年月日)也需要保留<br>
+            • 截圖請加註<span class="guide-highlight">浮水印</span>，格式為「群裡名稱＋上傳日期」<br>
+            • 檔案格式：<span class="guide-highlight">JPG</span>，大小限制<span class="guide-highlight">1MB</span> 以內（手機截圖通常都在範圍內）<br>
             • 這些圖片只有主辦人/審核人員看得到，不會顯示在下方公開的登記清單裡（清單只會顯示「有沒有上傳」）
+          </div>
+
+          <div id="exampleImagesBox" style="margin-top:12px;display:none;">
+            <div class="hint" style="margin-bottom:6px;font-weight:600;">📎 範本參考圖（紅框處為請大家特別注意的地方）</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <div id="exampleRegBox" style="display:none;text-align:center;">
+                <div class="review-thumb-label" style="margin-bottom:4px;">場次登錄範本</div>
+                <img id="exampleRegImg" src="" style="width:140px;border-radius:8px;border:1px solid var(--line-soft);cursor:pointer;" onclick="window.open(this.src, '_blank')" />
+              </div>
+              <div id="exampleDataBox" style="display:none;text-align:center;">
+                <div class="review-thumb-label" style="margin-bottom:4px;">會員資料範本</div>
+                <img id="exampleDataImg" src="" style="width:140px;border-radius:8px;border:1px solid var(--line-soft);cursor:pointer;" onclick="window.open(this.src, '_blank')" />
+              </div>
+            </div>
           </div>
         </div>
         <label class="price-check" style="margin-top:10px;">
           <input type="checkbox" id="inpMembershipAck" disabled />
           我已閱讀以上上傳須知
         </label>
-
-        <div id="membershipDataFieldWrap" class="field-row" style="margin-top:10px;display:none;">
-          <div class="field" style="flex:1;">
-            <label>上傳 Weverse 會員資料截圖（非必填）</label>
-            <input id="inpMembershipDataFile" type="file" accept="image/jpeg,image/jpg" disabled />
-          </div>
-        </div>
-        <div class="hint" id="membershipDataFileHint"></div>
 
         <div id="membershipRegFieldWrap" class="field-row" style="margin-top:10px;display:none;">
           <div class="field" style="flex:1;">
@@ -1084,6 +1107,14 @@
           </div>
         </div>
         <div class="hint" id="membershipRegFileHint"></div>
+
+        <div id="membershipDataFieldWrap" class="field-row" style="margin-top:10px;display:none;">
+          <div class="field" style="flex:1;">
+            <label>上傳 Weverse 會員資料截圖（非必填）</label>
+            <input id="inpMembershipDataFile" type="file" accept="image/jpeg,image/jpg" disabled />
+          </div>
+        </div>
+        <div class="hint" id="membershipDataFileHint"></div>
       </div>
     </div>
 
@@ -1174,6 +1205,8 @@ let currentEnableMembershipReg = false;
 let currentEnableMembershipData = false;
 let currentUploadDeadline = '';
 let currentTransferRules = '';
+let currentExampleRegImg = '';
+let currentExampleDataImg = '';
 let hasExpandedMembershipGuide = false;
 let currentVenue = '';
 let currentTicketPrice = '';
@@ -1321,8 +1354,8 @@ function renderTable(list){
 
     const membershipCol = showMembershipCol
       ? `<td><div class="data-tags">
-           <span class="data-tag ${o.membershipDataUrl ? 'tag-yes' : 'tag-no'}">資料${o.membershipDataUrl ? '✓' : '—'}</span>
            <span class="data-tag ${o.membershipRegUrl ? 'tag-yes' : 'tag-no'}">登記${o.membershipRegUrl ? '✓' : '—'}</span>
+           <span class="data-tag ${o.membershipDataUrl ? 'tag-yes' : 'tag-no'}">資料${o.membershipDataUrl ? '✓' : '—'}</span>
          </div></td>`
       : '';
 
@@ -1665,11 +1698,10 @@ function detachListeners(){
 let rawOrdersList = [];
 
 function membershipUploadScore(o){
-  // 排序優先權：兩個都傳 > 只傳會員資料 > 只傳會員登記 > 都沒傳
-  let score = 0;
-  if(o.membershipDataUrl) score += 2;
-  if(o.membershipRegUrl) score += 1;
-  return score;
+  // 排序優先權：有上傳場次登記（不論會員資料有沒有傳）> 只傳會員資料 > 都沒傳
+  if(o.membershipRegUrl) return 2;
+  if(o.membershipDataUrl) return 1;
+  return 0;
 }
 
 function sortAndRenderOrders(){
@@ -1736,6 +1768,8 @@ function attachListeners(eventId){
     currentEnableMembershipData = !!data.enableMembershipData;
     currentUploadDeadline = data.uploadDeadline || '';
     currentTransferRules = data.transferRules || '';
+    currentExampleRegImg = data.exampleRegImg || '';
+    currentExampleDataImg = data.exampleDataImg || '';
     renderDeadlineTag();
     applyLockState();
     applyStubBackground(currentBgImage, currentBgPosX, currentBgPosY, currentTextPos);
@@ -1747,6 +1781,7 @@ function attachListeners(eventId){
     renderMembershipToggleStatus();
     renderTransferRulesBox();
     renderUploadDeadlineTag();
+    renderExampleImages();
     sortAndRenderOrders();
   });
 }
@@ -1759,6 +1794,28 @@ function renderTransferRulesBox(){
   }else{
     box.style.display = 'none';
   }
+}
+
+function renderExampleImages(){
+  const regBox = el('exampleRegBox');
+  const dataBox = el('exampleDataBox');
+  const wrap = el('exampleImagesBox');
+
+  if(currentExampleRegImg){
+    el('exampleRegImg').src = currentExampleRegImg;
+    regBox.style.display = 'block';
+  }else{
+    regBox.style.display = 'none';
+  }
+
+  if(currentExampleDataImg){
+    el('exampleDataImg').src = currentExampleDataImg;
+    dataBox.style.display = 'block';
+  }else{
+    dataBox.style.display = 'none';
+  }
+
+  wrap.style.display = (currentExampleRegImg || currentExampleDataImg) ? 'block' : 'none';
 }
 
 function renderPriceFieldState(){
@@ -2134,6 +2191,8 @@ async function openEventPanel(){
   renderPriceToggleStatus();
   renderMembershipToggleStatus();
   el('inpTransferRules').value = currentTransferRules;
+  el('inpExampleRegImg').value = currentExampleRegImg;
+  el('inpExampleDataImg').value = currentExampleDataImg;
   el('reviewerPinDisplay').textContent = REVIEWER_PIN;
   el('inpUploadDeadline').value = currentUploadDeadline ? new Date(currentUploadDeadline).toISOString().slice(0,10) : '';
   el('eventPanelWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2223,6 +2282,19 @@ el('saveTransferRulesBtn').addEventListener('click', async () => {
   try{
     await db.ref(`eventsIndex/${EVENT_ID}/transferRules`).set(rules);
     setStatus(rules ? '讓票規範已更新！' : '已清除讓票規範文字！');
+  }catch(e){
+    setStatus('更新失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
+  }
+});
+
+el('saveExampleImagesBtn').addEventListener('click', async () => {
+  if(!unlockOrganizer()) return;
+  const regUrl = el('inpExampleRegImg').value.trim();
+  const dataUrl = el('inpExampleDataImg').value.trim();
+  try{
+    await db.ref(`eventsIndex/${EVENT_ID}/exampleRegImg`).set(regUrl);
+    await db.ref(`eventsIndex/${EVENT_ID}/exampleDataImg`).set(dataUrl);
+    setStatus('範本圖已更新！');
   }catch(e){
     setStatus('更新失敗：' + (e && e.message ? e.message : '請檢查網路連線'), true);
   }
@@ -2636,12 +2708,12 @@ function renderReviewList(){
     return `
       <div class="review-item">
         <div class="review-thumb-box">
-          <div class="review-thumb-label">會員資料</div>
-          ${dataThumb}
+          <div class="review-thumb-label">場次登錄</div>
+          ${regThumb}
         </div>
         <div class="review-thumb-box">
-          <div class="review-thumb-label">場次登記</div>
-          ${regThumb}
+          <div class="review-thumb-label">會員資料</div>
+          ${dataThumb}
         </div>
         <div class="review-info">
           <div class="rname">${escapeHtml(o.name)}</div>
