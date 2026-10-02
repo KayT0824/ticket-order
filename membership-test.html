@@ -550,6 +550,17 @@
   }
   .data-tag.tag-yes{background:#E3F4E8;color:#1E7A3C;}
   .data-tag.tag-no{background:#F2F3F5;color:var(--ink-soft);}
+  tr.tier-divider-row td{
+    background:#F7F4EC;
+    color:var(--ink-soft);
+    font-size:12px;
+    font-weight:700;
+    padding:8px 10px;
+    border-top:2px solid var(--line-soft);
+    border-bottom:1px solid var(--line-soft);
+    text-align:left;
+    white-space:nowrap;
+  }
   .approve-btn{
     border:1px solid var(--line);
     border-radius:999px;
@@ -1358,6 +1369,14 @@ function renderTable(list){
   const showPriceCols = !currentPriceDisabled;
   const showMembershipCol = currentEnableMembershipReg || currentEnableMembershipData;
 
+  const tierLabels = {
+    2: '✅ 已上傳場次登記',
+    1: '🔶 僅上傳會員資料（未上傳場次登記）',
+    0: '⬜ 尚未上傳資料'
+  };
+  let colCount = 5 + (showPriceCols ? 2 : 0) + (showMembershipCol ? 2 : 0);
+  let lastTier = null;
+
   let rows = list.map((o, idx) => {
     const hasPrice = o.price !== null && o.price !== undefined;
     const priceCell = hasPrice ? fmtMoney(o.price) : '<span class="no-price-tag">不限金額</span>';
@@ -1391,7 +1410,16 @@ function renderTable(list){
          </div>`
       : `<span class="rank-num">${idx + 1}</span>`;
 
-    return `<tr class="${rowCls}">
+    let dividerRow = '';
+    if(showMembershipCol){
+      const tier = membershipUploadScore(o);
+      if(tier !== lastTier){
+        dividerRow = `<tr class="tier-divider-row"><td colspan="${colCount}">${tierLabels[tier]}</td></tr>`;
+        lastTier = tier;
+      }
+    }
+
+    return `${dividerRow}<tr class="${rowCls}">
       <td class="rank-cell">
         ${rankCell}
       </td>
