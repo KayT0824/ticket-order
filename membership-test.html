@@ -452,12 +452,25 @@
   .bg-preview-box.has-image .bg-preview-hint{display:none;}
   .review-item{
     display:flex;
-    align-items:center;
+    align-items:flex-start;
     gap:12px;
     padding:10px 0;
     border-top:1px solid var(--line-soft);
   }
   .review-item:first-child{border-top:none;}
+  .review-thumb-box{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    flex-shrink:0;
+  }
+  .review-thumb-label{
+    font-size:10px;
+    color:var(--ink-soft);
+    font-weight:600;
+    white-space:nowrap;
+  }
   .review-item img{
     width:64px;
     height:64px;
@@ -1306,8 +1319,8 @@ function renderTable(list){
 
     const membershipCol = showMembershipCol
       ? `<td><div class="data-tags">
-           <span class="data-tag ${o.membershipRegUrl ? 'tag-yes' : 'tag-no'}">登記${o.membershipRegUrl ? '✓' : '—'}</span>
            <span class="data-tag ${o.membershipDataUrl ? 'tag-yes' : 'tag-no'}">資料${o.membershipDataUrl ? '✓' : '—'}</span>
+           <span class="data-tag ${o.membershipRegUrl ? 'tag-yes' : 'tag-no'}">登記${o.membershipRegUrl ? '✓' : '—'}</span>
          </div></td>`
       : '';
 
@@ -2608,16 +2621,22 @@ function renderReviewList(){
     return;
   }
   listEl.innerHTML = list.map(o => {
-    const regThumb = o.membershipRegUrl
-      ? `<img src="${o.membershipRegUrl}" loading="lazy" alt="${escapeHtml(o.name)} 的會員登記截圖" onclick="window.open('${o.membershipRegUrl}', '_blank')" />`
-      : `<div class="review-no-img">登記<br>未上傳</div>`;
     const dataThumb = o.membershipDataUrl
       ? `<img src="${o.membershipDataUrl}" loading="lazy" alt="${escapeHtml(o.name)} 的會員資料截圖" onclick="window.open('${o.membershipDataUrl}', '_blank')" />`
-      : `<div class="review-no-img">資料<br>未上傳</div>`;
+      : `<div class="review-no-img">未上傳</div>`;
+    const regThumb = o.membershipRegUrl
+      ? `<img src="${o.membershipRegUrl}" loading="lazy" alt="${escapeHtml(o.name)} 的會員登記截圖" onclick="window.open('${o.membershipRegUrl}', '_blank')" />`
+      : `<div class="review-no-img">未上傳</div>`;
     return `
       <div class="review-item">
-        ${regThumb}
-        ${dataThumb}
+        <div class="review-thumb-box">
+          <div class="review-thumb-label">會員資料</div>
+          ${dataThumb}
+        </div>
+        <div class="review-thumb-box">
+          <div class="review-thumb-label">場次登記</div>
+          ${regThumb}
+        </div>
         <div class="review-info">
           <div class="rname">${escapeHtml(o.name)}</div>
           <div class="rqty">張數：${o.qty}</div>
