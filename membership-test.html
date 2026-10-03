@@ -907,6 +907,7 @@
 
         <div style="height:1px;background:var(--line-soft);margin:16px 0;"></div>
 
+        <div class="hint" style="margin-bottom:8px;">⏰ 登記表單自動關閉日期（不會顯示給大家看，純粹後台用來自動鎖表單）:<strong id="deadlineAdminTag">尚未設定</strong></div>
         <div class="field-row">
           <div class="field" style="flex:1;">
             <label>設定截止日期</label>
@@ -1059,8 +1060,7 @@
 
   <div class="card primary-card" id="registerCard">
     <div class="deadline-note">
-      <span class="deadline-tag" id="deadlineTag">尚未設定截止時間</span>
-      <button class="stub-edit" id="editDeadlineBtn" style="display:none;">設定截止時間🔒</button>
+      <span class="deadline-tag" id="uploadDeadlinePublicTag">尚未設定資料上傳截止時間</span>
       <span class="event-tag-inline" id="eventTag" style="display:none;"></span>
     </div>
     <h2 class="primary-card-title">📝 填寫我的登記</h2>
@@ -1254,7 +1254,6 @@ function unlockOrganizer(){
     return false;
   }
   isOrganizerMode = true;
-  el('editDeadlineBtn').style.display = 'inline-block';
   el('eventTag').style.display = 'inline-block';
   el('organizerSection').style.display = 'block';
   el('unlockOrganizerBtn').style.display = 'none';
@@ -1300,15 +1299,33 @@ function applyLockState(){
 }
 
 function renderDeadlineTag(){
-  const tag = el('deadlineTag');
+  const tag = el('deadlineAdminTag');
   if(!currentDeadline){
-    tag.textContent = '尚未設定截止時間';
+    tag.textContent = '尚未設定';
     tag.classList.remove('passed');
     return;
   }
   const d = new Date(currentDeadline);
-  const label = `登記截止:${d.toLocaleDateString('zh-TW')}`;
+  const label = d.toLocaleDateString('zh-TW');
   if(isDeadlinePassed()){
+    tag.textContent = `${label}（已截止）`;
+    tag.classList.add('passed');
+  }else{
+    tag.textContent = label;
+    tag.classList.remove('passed');
+  }
+}
+
+function renderUploadDeadlinePublicTag(){
+  const tag = el('uploadDeadlinePublicTag');
+  if(!currentUploadDeadline){
+    tag.textContent = '尚未設定資料上傳截止時間';
+    tag.classList.remove('passed');
+    return;
+  }
+  const d = new Date(currentUploadDeadline);
+  const label = `資料上傳截止：${d.toLocaleDateString('zh-TW')}`;
+  if(isUploadDeadlinePassed()){
     tag.textContent = `${label}（已截止）`;
     tag.classList.add('passed');
   }else{
@@ -1838,6 +1855,7 @@ function attachListeners(eventId){
     renderMembershipToggleStatus();
     renderTransferRulesBox();
     renderUploadDeadlineTag();
+    renderUploadDeadlinePublicTag();
     renderExampleImages();
     sortAndRenderOrders();
   });
@@ -2506,12 +2524,6 @@ el('createEventBtn').addEventListener('click', async () => {
 });
 
 // ---- 截止日期 ----
-
-el('editDeadlineBtn').addEventListener('click', async () => {
-  if(!unlockOrganizer()) return;
-  await openEventPanel();
-  el('inpDeadlineInline').focus();
-});
 
 el('saveDeadlineInlineBtn').addEventListener('click', async () => {
   const trimmed = el('inpDeadlineInline').value.trim();
