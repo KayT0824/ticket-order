@@ -588,6 +588,7 @@
     color:var(--ink-soft);
   }
   .approve-btn.approved{background:#E3F4E8;border-color:#BEE4C9;color:#1E7A3C;}
+  .approve-btn.rejected{background:#FBEAE8;border-color:#F0BDB8;color:var(--stamp);}
   .volunteer-list{
     display:flex;
     flex-wrap:wrap;
@@ -1460,8 +1461,10 @@ function renderTable(list){
          </div></td>`
       : '';
 
+    const reviewStatus = getReviewStatus(o);
+    const reviewInfo = REVIEW_STATUS_MAP[reviewStatus];
     const approveCol = showMembershipCol
-      ? `<td><button class="approve-btn ${o.approved ? 'approved' : ''}" data-name="${escapeHtml(o.name)}">${o.approved ? '✅ 已審核' : '⬜ 未審核'}</button></td>`
+      ? `<td><button class="approve-btn ${reviewInfo.cls}" data-name="${escapeHtml(o.name)}">${reviewInfo.label}</button></td>`
       : '';
 
     const tier = showMembershipCol ? membershipUploadScore(o) : null;
@@ -1548,8 +1551,8 @@ function renderTable(list){
       }
       const name = btn.getAttribute('data-name');
       const entry = list.find(o => o.name === name);
-      const next = !(entry && entry.approved);
-      updateOrderApprovalAPI(name, next).catch(() => {
+      const next = nextReviewStatus(getReviewStatus(entry || {}));
+      updateReviewStatusAPI(name, next).catch(() => {
         setStatus('審核狀態更新失敗，請再試一次', true);
       });
     });
@@ -1684,15 +1687,19 @@ async function upsertOrderAPI(entry){
     price: (entry.price === null || entry.price === undefined) ? null : entry.price,
     order: entry.order,
     status: entry.status || '',
-    approved: !!entry.approved,
+    approved: entry.reviewStatus === 'approved',
+    reviewStatus: entry.reviewStatus || '',
     membershipRegUrl: entry.membershipRegUrl || '',
     membershipDataUrl: entry.membershipDataUrl || '',
     ts: entry.ts || Date.now()
   });
 }
 
-async function updateOrderApprovalAPI(name, approved){
-  await db.ref(`events/${EVENT_ID}/orders/${sanitizeKey(name)}`).update({ approved });
+async function updateReviewStatusAPI(name, reviewStatus){
+  await db.ref(`events/${EVENT_ID}/orders/${sanitizeKey(name)}`).update({
+    reviewStatus,
+    approved: reviewStatus === 'approved'
+  });
 }
 
 async function uploadMembershipFile(name, file, folder){
@@ -1810,6 +1817,25 @@ function detachListeners(){
 }
 
 let rawOrdersList = [];
+
+const REVIEW_STATUS_MAP = {
+  '': { label: '⬜ 未審核', cls: '' },
+  'approved': { label: '✅ 已審核', cls: 'approved' },
+  'rejected': { label: '❌ 未通過', cls: 'rejected' }
+};
+
+function nextReviewStatus(current){
+  if(current === '') return 'approved';
+  if(current === 'approved') return 'rejected';
+  return '';
+}
+
+function getReviewStatus(o){
+  // 向下相容：舊資料用布林值 approved，沒有 reviewStatus 欄位時用它換算
+  if(o.reviewStatus) return o.reviewStatus;
+  if(o.approved) return 'approved';
+  return '';
+}
 
 function membershipUploadScore(o){
   // 排序優先權：有上傳場次登記（不論會員資料有沒有傳）> 只傳會員資料 > 都沒傳
@@ -2122,7 +2148,7 @@ el('submitBtn').addEventListener('click', async () => {
       price: noPrice ? null : price,
       order: orderVal,
       status: (baseEntry && baseEntry.status) || '',
-      approved: (baseEntry && baseEntry.approved) || false,
+      reviewStatus: baseEntry ? getReviewStatus(baseEntry) : '',
       membershipRegUrl,
       membershipDataUrl,
       ts: Date.now()
@@ -2229,7 +2255,7 @@ el('exportBtn').addEventListener('click', async () => {
       '小計': hasPrice ? o.qty * o.price : '不限金額',
       '會員登記截圖': o.membershipRegUrl || '未提供',
       '會員資料截圖': o.membershipDataUrl || '未提供',
-      '審核狀態': o.approved ? '已審核' : '未審核',
+      '審核狀態': REVIEW_STATUS_MAP[getReviewStatus(o)].label.replace(/^[^\s]+\s/, ''),
       '登記時間': new Date(o.ts).toLocaleString('zh-TW')
     };
   });
@@ -2857,7 +2883,7 @@ function renderReviewList(){
         <div class="review-info">
           <div class="rname">${escapeHtml(o.name)}</div>
           <div class="rqty">張數：${o.qty}</div>
-          <button class="approve-btn ${o.approved ? 'approved' : ''}" data-name="${escapeHtml(o.name)}" style="margin-top:6px;">${o.approved ? '✅ 已審核' : '⬜ 未審核'}</button>
+          <button class="approve-btn ${REVIEW_STATUS_MAP[getReviewStatus(o)].cls}" data-name="${escapeHtml(o.name)}" style="margin-top:6px;">${REVIEW_STATUS_MAP[getReviewStatus(o)].label}</button>
         </div>
       </div>`;
   }).join('');
@@ -2866,8 +2892,8 @@ function renderReviewList(){
     btn.addEventListener('click', () => {
       const name = btn.getAttribute('data-name');
       const entry = list.find(o => o.name === name);
-      const next = !(entry && entry.approved);
-      updateOrderApprovalAPI(name, next).then(() => {
+      const next = nextReviewStatus(getReviewStatus(entry || {}));
+      updateReviewStatusAPI(name, next).then(() => {
         renderReviewList();
       }).catch(() => {
         setStatus('審核狀態更新失敗，請再試一次', true);
