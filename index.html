@@ -1852,6 +1852,8 @@ function sortAndRenderOrders(){
       const aScore = membershipUploadScore(a);
       const bScore = membershipUploadScore(b);
       if(aScore !== bScore) return bScore - aScore;
+      // 同一區塊內：用「最後更新（完成上傳）時間」排序，不是最初填表單的順序
+      return (a.ts || 0) - (b.ts || 0);
     }
     return (a.order || 0) - (b.order || 0);
   });
