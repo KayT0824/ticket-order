@@ -1471,7 +1471,7 @@ function renderTable(list){
     const tierDisplayNum = tier === 2 ? 1 : (tier === 1 ? 2 : 3);
     const displayNum = showMembershipCol ? tierDisplayNum : (idx + 1);
 
-    const rankCell = isOrganizerMode
+    const rankCell = (isOrganizerMode && !showMembershipCol)
       ? `<div class="rank-controls">
            <button class="move-btn" data-idx="${idx}" data-dir="up" ${isFirst ? 'disabled' : ''}>▲</button>
            <span class="rank-num">${displayNum}</span>
