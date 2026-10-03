@@ -500,6 +500,21 @@
     color:var(--stamp);
     font-weight:700;
   }
+  .guide-section{
+    margin-bottom:12px;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .guide-section:last-of-type{
+    border-bottom:none;
+    padding-bottom:0;
+  }
+  .guide-section-title{
+    font-weight:700;
+    font-size:13px;
+    color:var(--ink);
+    margin-bottom:5px;
+  }
   .no-price-tag{
     color:var(--ink-soft);
     font-style:italic;
@@ -1082,6 +1097,7 @@
         </label>
       </div>
     </div>
+    <div class="hint" style="margin-top:8px;">一次登記多張票，請在姓名欄位一併寫上同行者稱呼（例如：小明+媽媽），填寫的人數要跟張數一致。</div>
 
     <div id="membershipWrap" style="display:none;">
       <div style="height:1px;background:var(--line-soft);margin:14px 0;"></div>
@@ -1095,13 +1111,35 @@
         </div>
         <div id="membershipGuideBody" style="display:none;margin-top:10px;">
           <div id="transferRulesBox" style="display:none;background:#FFF6E5;border:1px solid #F0D9A0;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--ink);white-space:pre-line;"></div>
-          <div class="hint" style="margin-bottom:0;">
-            • 請上傳 Weverse 會員(場次)登記截圖，有這張就不用再上傳會員資料截圖<br>
-            • 若沒有登錄場次，請改上傳 Weverse 會員資料截圖作為備用證明（此欄非必填，但會影響讓票順序）<br>
-            • 會員資料需保留開頭英文字母 <span class="guide-highlight">SE + 最後4 碼數字</span>，中間數字馬賽克，<span class="guide-highlight">會員有效時間</span>(年月日)也需要保留<br>
-            • 截圖請加註<span class="guide-highlight">浮水印</span>，格式為「群裡名稱＋上傳日期」<br>
-            • 檔案格式：<span class="guide-highlight">JPG</span>，大小限制<span class="guide-highlight">1MB</span> 以內（手機截圖通常都在範圍內）<br>
-            • 這些圖片只有主辦人/審核人員看得到，不會顯示在下方公開的登記清單裡（清單只會顯示「有沒有上傳」）
+          <div class="guide-section">
+            <div class="guide-section-title">📷 要上傳哪一張？</div>
+            <div class="hint" style="margin-bottom:0;">
+              優先上傳「會員(場次)登記」截圖<br>
+              沒有登錄場次？改上傳「會員資料」截圖當備用證明（非必填，但會影響讓票順序）
+            </div>
+          </div>
+
+          <div class="guide-section">
+            <div class="guide-section-title">✂️ 截圖怎麼處理？</div>
+            <div class="hint" style="margin-bottom:0;">
+              會員編號：只露出開頭 <span class="guide-highlight">SE</span> + 最後 <span class="guide-highlight">4 碼數字</span>，中間打碼遮住<br>
+              <span class="guide-highlight">姓名</span>、<span class="guide-highlight">會員有效期限</span>（年月日）都要保留清楚，不要遮到<br>
+              截圖記得加<span class="guide-highlight">浮水印</span>，格式「群裡名稱＋上傳日期」
+            </div>
+          </div>
+
+          <div class="guide-section">
+            <div class="guide-section-title">📁 檔案規格</div>
+            <div class="hint" style="margin-bottom:0;">
+              格式 <span class="guide-highlight">JPG</span>，大小 <span class="guide-highlight">1MB</span> 以內（手機截圖通常都在範圍內）
+            </div>
+          </div>
+
+          <div class="guide-section" style="margin-bottom:0;">
+            <div class="guide-section-title">🔒 隱私保護</div>
+            <div class="hint" style="margin-bottom:0;">
+              這兩張圖只有主辦人/審核人員看得到，公開清單只會顯示「有沒有上傳」，不會曝光圖片內容
+            </div>
           </div>
 
           <div id="exampleImagesBox" style="margin-top:12px;display:none;">
