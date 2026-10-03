@@ -1292,8 +1292,7 @@ function applyLockState(){
     bannerText.textContent = '⚠️ 這個連結還沒有設定正式場次，請先確認你拿到的是不是正確的活動連結';
     warnBtn.style.display = 'inline-block';
   }else if(deadlinePassed){
-    const d = new Date(currentDeadline);
-    bannerText.textContent = `⏰ 這場登記已於 ${d.toLocaleDateString('zh-TW')} 截止，無法再填寫或修改`;
+    bannerText.textContent = `⏰ 這場登記已經截止，無法再填寫或修改`;
     warnBtn.style.display = 'none';
   }
 }
@@ -2742,6 +2741,11 @@ async function loadReminderBanner(){
       !ev.archived && ev.event !== 'default' &&
       (ev.salePhases.length || (ev.ticketDate || '').trim() || ev.uploadDeadline)
     );
+    withDates.sort((a, b) => {
+      const aTime = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+      const bTime = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+      return aTime - bTime;
+    });
     const overlay = el('reminderModalOverlay');
     if(!withDates.length){
       overlay.style.display = 'none';
