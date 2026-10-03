@@ -2748,17 +2748,22 @@ async function loadReminderBanner(){
       return;
     }
     el('reminderList').innerHTML = withDates.map(ev => {
-      const lines = [];
-      if(ev.uploadDeadline){
-        const d = new Date(ev.uploadDeadline);
-        lines.push(`📋 資料上傳截止：${d.toLocaleDateString('zh-TW')} ${d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}`);
-      }
+      const uploadLine = ev.uploadDeadline
+        ? (() => {
+            const d = new Date(ev.uploadDeadline);
+            return `📋 資料上傳截止：${d.toLocaleDateString('zh-TW')} ${d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}`;
+          })()
+        : '';
+      const saleLines = [];
       if(ev.salePhases.length){
-        lines.push(formatSalePhases(ev.salePhases));
+        saleLines.push(formatSalePhases(ev.salePhases));
       }else if(ev.ticketDate){
-        lines.push(ev.ticketDate);
+        saleLines.push(ev.ticketDate);
       }
-      const timeText = lines.join('\n');
+      const saleText = saleLines.join('\n');
+      const timeText = (uploadLine && saleText)
+        ? `${uploadLine}\n\n${saleText}`
+        : (uploadLine || saleText);
       return `
       <div class="reminder-item">
         <div class="reminder-title">${escapeHtml(ev.title || ev.event)}</div>
